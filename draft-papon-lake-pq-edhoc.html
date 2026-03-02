@@ -1290,9 +1290,6 @@ svg :is([fill="white"], [fill^="#fff"]) {
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.6">
                 <p id="section-toc.1-1.4.2.6.1"><a href="#section-4.6" class="auto internal xref">4.6</a>.  <a href="#name-external-authorization-data" class="internal xref">External Authorization Data (EAD)</a></p>
 </li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.7">
-                <p id="section-toc.1-1.4.2.7.1"><a href="#section-4.7" class="auto internal xref">4.7</a>.  <a href="#name-post-compromise-security" class="internal xref">Post-Compromise Security</a></p>
-</li>
             </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5">
@@ -3274,6 +3271,8 @@ At the end of every of the five handshakes, each endpoint securely acquires the 
 For protocol 1, this authentication is ensured by the Responder's MAC and the Initiator's signature on its own MAC, similar to EDHOC method 1.
 For protocol 2, it is ensured by the Respond's signature, and the Initiator's signature on its own MAC. Protocol 3 ensured this in a reverse way, since it is a mirror version of protocol 2.
 For protocol 4, this authentication is ensured by the Responder's MAC and the Initiator's signature (not on its MAC this time). And for protocol 5, this is ensured by the signatures of the Initiator and the Responder.<a href="#section-4-1" class="pilcrow">¶</a></p>
+<p id="section-4-2">Our hybrid approaches (combining KEM and signature for authentication) follow the structure of the Key Derivation Schedule in EDHOC <span>[<a href="#RFC9528" class="cite xref">RFC9528</a>]</span>. The use of a 'static' shared-secret in key derivation strengthens the security of the key between two non-compromised parties (e.g., if the ephemeral KEM key of the session is compromised), and to some extent also strengthens authentication (e.g., if a long-term signature secret key is compromised).<a href="#section-4-2" class="pilcrow">¶</a></p>
+<p id="section-4-3">Nos approches hybrides (mélant KEM et signature pour l'authentification) reprennent la structure du Key Derivation Schedule de EDHOC <span>[<a href="#RFC9528" class="cite xref">RFC9528</a>]</span>. L'utilisation d'un 'static' shared-secret dans la dérivation de clé reforce la sécurité de la clé entre deux parties non-compromise (par exemple si la clé de KEM éphémère est compromise), et d'une certaine manière renforce aussi l'authentification (en cas par exemple de compromission d'une clé long-terme de signature).<a href="#section-4-3" class="pilcrow">¶</a></p>
 <div id="forward-secrecy">
 <section id="section-4.1">
         <h3 id="name-forward-secrecy">
@@ -3303,7 +3302,12 @@ However, we can still keep our previous proposal in mind and try to prove this p
 <section id="section-4.3">
         <h3 id="name-key-compromise-impersonatio">
 <a href="#section-4.3" class="section-number selfRef">4.3. </a><a href="#name-key-compromise-impersonatio" class="section-name selfRef">Key Compromise Impersonation</a>
-      </h3>
+        </h3>
+<p id="section-4.3-1">Our protocols are based on the same constructions as <span>[<a href="#RFC9528" class="cite xref">RFC9528</a>]</span> and <span>[<a href="#I-D.pocero-authkem-edhoc" class="cite xref">I-D.pocero-authkem-edhoc</a>]</span>. The way intermediate keys and session keys are derived does not differ. As a result, if a long-term secret key (signature and/or KEM) of a party is compromised, an attacker could impersonate the compromised party to establish new sessions with other endpoints for example. But this would not affect existing sessions with the compromised party.
+This remains true even in our hybrid scenarios where one of the two endpoints uses two long-term keys (a KEM one and a signature one).
+Note that in this case, compromising only one of the two long-term keys does not affect established sessions. Furthermore, if an attacker wants to establish a new session by impersonating the semi-compromised party, he would need to have compromised both long-term keys to complete the handshake, assuming he uses one of our hybrid protocols again.
+Finally, note that compromising an ephemeral KEM key only compromises the corresponding session.
+Thus, we have the same Key Compromise Impersonation security as in <span>[<a href="#RFC9528" class="cite xref">RFC9528</a>]</span> and <span>[<a href="#I-D.pocero-authkem-edhoc" class="cite xref">I-D.pocero-authkem-edhoc</a>]</span>.<a href="#section-4.3-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="downgrade-protection">
@@ -3328,14 +3332,6 @@ However, we can still keep our previous proposal in mind and try to prove this p
 <a href="#section-4.6" class="section-number selfRef">4.6. </a><a href="#name-external-authorization-data" class="section-name selfRef">External Authorization Data (EAD)</a>
         </h3>
 <p id="section-4.6-1">The External Authorization Data (EAD) in our protocols behaves similarly to what is done in EDHOC <span>[<a href="#RFC9528" class="cite xref">RFC9528</a>]</span> and <span>[<a href="#I-D.pocero-authkem-edhoc" class="cite xref">I-D.pocero-authkem-edhoc</a>]</span>. The first two messages <code>message_1</code> and <code>message_2</code> carry EAD (partially encrypted), which are not yet authenticated. This makes them potentially vulnerable to replay attacks by an active attacker. The last two messages <code>message_3</code> and <code>message_4</code> protect the EAD using either MAC or signature, as well as AEAD encryption. Thus, like in EDHOC <span>[<a href="#RFC9528" class="cite xref">RFC9528</a>]</span>, our 5 protocols' EAD data must be treated as untrusted until the handshake is successfully completed.<a href="#section-4.6-1" class="pilcrow">¶</a></p>
-</section>
-</div>
-<div id="post-compromise-security">
-<section id="section-4.7">
-        <h3 id="name-post-compromise-security">
-<a href="#section-4.7" class="section-number selfRef">4.7. </a><a href="#name-post-compromise-security" class="section-name selfRef">Post-Compromise Security</a>
-        </h3>
-<p id="section-4.7-1">TODO : explain what kind of security the KEM &amp; Signs approach brings in the Key Derivation Schedule + EAD .<a href="#section-4.7-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
