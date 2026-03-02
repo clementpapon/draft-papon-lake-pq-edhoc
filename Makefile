@@ -13,4 +13,3 @@ else
 	    https://github.com/martinthomson/i-d-template $(LIBDIR)
 endif
 endif
-export UPLOAD_EMAIL ?= clement.papon@unilim.fr
