@@ -205,14 +205,14 @@ Table of Contents
    approach for use cases where the Initiator already knows the identity
    of the Responder, in a post-quantum version using ephemeral and
    static KEMs for authentication.  The Initiator, knowing the long-term
-   public key of the Responder, can derive the shared-secret (ss_R) and
+   public key of the Responder, can derive the shared-secret ss_R and
    compute a key, then encrypt part of the first message.  It can thus
    send its identity directly and securely authenticate himself, since
    only the Responder with its long-term secret key can decrypt the
    first message.  Knowing the Initiator's identity, the Responder can
-   derive the second shared-secret (ss_I) and continue the key
-   derivation schedule.  Sending the encrypted second message allows it
-   to securely confirm its identity to the Initiator.
+   derive the second shared-secret ss_I and continue the key derivation
+   schedule.  Sending the encrypted second message allows it to securely
+   confirm its identity to the Initiator.
 
    The key motivation behind our current proposal is a desire to reduce
    the message-complexity of quantum-resistant EDHOC.  We propose an
@@ -718,7 +718,7 @@ Table of Contents
 
    where sign.sk_R is the long-term signing private key of the
    Responder, and finally ciphers PLAINTEXT_2A = (PLAINTEXT_2,
-   SIGNATURE_2) signs this ciphertext:
+   SIGNATURE_2):
 
    *  CIPHERTEXT_2 = PLAINTEXT_2A XOR KEYSTREAM_2.
 
@@ -1054,7 +1054,7 @@ Table of Contents
    *  MAC_2 = EDHOC_KDF(PRK_2e, 2, C_R, ID_CRED_R, TH_2, EAD_2,
       mac_length_2);
 
-   *  `SIGNATURE_2 = DS.Sign(sign.sk_R, (C_R, ID_CRED_R, TH_2, EAD_2,
+   *  SIGNATURE_2 = DS.Sign(sign.sk_R, (C_R, ID_CRED_R, TH_2, EAD_2,
       MAC_2, sign_length)).
 
    The Responder now assembles PLAINTEXT_2:
@@ -1103,7 +1103,7 @@ Table of Contents
    where sign.sk_I is the long-term signing private key of the
    Initiator.  Finally he ciphers PLAINTEXT_3A = (PLAINTEXT_3,
    SIGNATURE_3) with the AEAD encryption algorithm negociated in
-   SUITES_I.
+   SUITES_I, as CIPHERTEXT_3.
 
    The third message is then composed of:
 
@@ -1290,7 +1290,7 @@ Table of Contents
    fifth mandatory message message_5.  Secondly, our third message
    message_3 contains an additional signature SIGNATURE_3 in
    PLAINTEXT_3A (before ciphering) (as this was the case for the
-   previous protocol we propose, with SIGNATURE_2)(we will propose a
+   previous protocol we propose, with SIGNATURE_2) (we will propose a
    byte analysis of this message later).  Finally, from a computational
    point of view, both the Initiator and the Responder no longer need to
    calculate the MAC MAC_3.  In return, in the same vein, the Initiator
@@ -1327,7 +1327,7 @@ Table of Contents
      |                           message_2                          |
      |                                                              |
      |         kem.ct_R, AEAD(ID_CRED_I, EAD_3, SIGNATURE_3)        |
-     +------------------------------------------------------------->
+     +-------------------------------------------------------------->
      |                           message_3                          |
      |                                                              |
      |                 kem.ct_I, AEAD(EAD_4, MAC_2)                 |
@@ -1387,7 +1387,7 @@ Table of Contents
 
    *  CIPHERTEXT_2 = PLAINTEXT_2 XOR KEYSTREAM_2
 
-   and finally sends message_2composed of CIPHERTEXT_2 and kem.ct_eph.
+   and finally sends message_2 composed of CIPHERTEXT_2 and kem.ct_eph.
 
 3.4.2.3.  Processing message_2, formatting and sending message_3
 
@@ -1420,7 +1420,7 @@ Table of Contents
    where sign.sk_I is the long-term signing private key of the
    Initiator.  Finally he sets PLAINTEXT_3A = (PLAINTEXT_3, SIGNATURE_3)
    and ciphers it with the AEAD encryption algorithm negociated in
-   SUITES_I.
+   SUITES_I, as CIPHERTEXT_3.
 
    The third message is then composed of:
 
@@ -1629,8 +1629,8 @@ Table of Contents
    fifth mandatory message message_5.  Secondly, our third message
    message_3 contains an additional signature SIGNATURE_3 in
    PLAINTEXT_3A(befoire ciphering) (as this was the case for protocols
-   that we have proposed above, with SIGNATURE_2 or SIGNATURE_3)(we will
-   propose a byte analysis of this message later).  Finally, from a
+   that we have proposed above, with SIGNATURE_2 or SIGNATURE_3) (we
+   will propose a byte analysis of this message later).  Finally, from a
    computational point of view, both the Initiator and the Responder no
    longer need to calculate the MAC MAC_3.  In return, here again, the
    Initiator must sign a message, and the Responder must verify this
@@ -1721,7 +1721,7 @@ Table of Contents
 
    then signs this message :
 
-   *  SIGNATURE_2 = DS.Sign(sign.sk_R, (CIPHERTEXT_2, sign_length))
+   *  SIGNATURE_2 = DS.Sign(sign.sk_R, (PLAINTEXT_2, sign_length))
 
    where sign.sk_R is the long-term signing private key of the
    Responder.  And finally he ciphers PLAINTEXT_2A = (PLAINTEXT_2,
@@ -1993,8 +1993,11 @@ Table of Contents
    We propose here a global security analysis of our five proposals (if
    necessary, we number the protocols from 1 to 5 according to their
    order of appearance in the document).  At the end of each handshake,
-   both endpoints: - securely compute the session key PRK_out; -
-   securely authenticate their partner.
+   both endpoints:
+
+   *  securely compute the session key PRK_out;
+
+   *  securely authenticate their partner.
 
    For the first protocol, the Responder authenticates through the MAC
    in message_2, while the Initiator authenticates through the signature
@@ -2026,7 +2029,7 @@ Table of Contents
    compromised parties (e.g., if the ephemeral KEM key of the session is
    compromised), and to some extent also strengthens forward-security
    and authentication (e.g., if a long-term signature secret key is
-   compromised)
+   compromised).
 
 4.1.  Forward Secrecy
 
