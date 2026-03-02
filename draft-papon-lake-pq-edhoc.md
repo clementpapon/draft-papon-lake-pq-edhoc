@@ -1514,7 +1514,12 @@ However, we can still keep our previous proposal in mind and try to prove this p
 
 ## Downgrade Protection
 
+Our protocols protect against downgrade attacks in the same way as EDHOC since the choice of methods and cipher suites is included in the calculation of certain THs and is linked to Connection Identifiers of each session (and then to endpoint identities). As a result, we have the same Downgrade Protection as in EDHOC {{RFC9528}}.
+
 ## Transcript Hash Binding
+
+In our protocols, transcript hashes are constructed as in {{RFC9528}}. They contain elements from previous messages as well as endpoint identities. They are also involved in the computation of derived and intermediaries keys (as explained in the Key Derivation Schedules). Thus, like EDHOC, they provide protection against misbinding attacks (since identities are linked to keys and messages via THs) and inter-session replay attacks (since any changes to a message or injected message from another session invalidates subsequent THs). Consequently, at each step of the handshake, the integrity of the process is verified using THs.
+
 
 ## External Authorization Data (EAD)
 
