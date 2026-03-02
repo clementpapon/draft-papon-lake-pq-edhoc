@@ -2203,15 +2203,15 @@ Table of Contents
               Improved EDHOC Protocol", 2022,
               <https://doi.org/10.1007/978-3-031-30122-3_1>.
 
-   [EDHOCPSK] Pérez, E. L., Watteyne, T., Marin-Lopez, R., Onete, C.,
+   [EDHOCPSK] López-Pérez, E., Watteyne, T., Marin-Lopez, R., Onete, C.,
               Papon, C., and M. Vučinić, "Pre-Shared Key Authentication
               With EDHOC - The Security–Performance Tradeoff", 2025,
               <https://ieeexplore.ieee.org/document/11247913>.
 
-   [LIEDHOC]  Lafourcade, P., Pérez, E. L., Olivier-Anclin, C., Onete,
-              C., Papon, C., and M. Vučinić, "Fine-grained, privacy-
-              augmenting LI-compliance in the LAKE standard", 2025,
-              <https://hal.science/hal-05126079v1>.
+   [LIEDHOC]  Lafourcade, P., López-Pérez, E., Olivier-Anclin, C.,
+              Onete, C., Papon, C., and M. Vučinić, "Fine-grained,
+              privacy-augmenting LI-compliance in the LAKE standard",
+              2025, <https://hal.science/hal-05126079v1>.
 
    [PPAKE]    Ramacher, S., Slamanig, D., and A. Weninger, "Privacy-
               Preserving Authenticated Key Exchange - Stronger Privacy
