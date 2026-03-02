@@ -1492,14 +1492,12 @@ For protocol 4, this authentication is ensured by the Responder's MAC and the In
 Our hybrid approaches (combining KEM and signature for authentication) follow the structure of the Key Derivation Schedule in EDHOC {{RFC9528}}. The use of a 'static' shared-secret in key derivation strengthens the security of the key between two non-compromised parties (e.g., if the ephemeral KEM key of the session is compromised), and to some extent also strengthens authentication (e.g., if a long-term signature secret key is compromised).
 
 
-Nos approches hybrides (mélant KEM et signature pour l'authentification) reprennent la structure du Key Derivation Schedule de EDHOC {{RFC9528}}. L'utilisation d'un 'static' shared-secret dans la dérivation de clé reforce la sécurité de la clé entre deux parties non-compromise (par exemple si la clé de KEM éphémère est compromise), et d'une certaine manière renforce aussi l'authentification (en cas par exemple de compromission d'une clé long-terme de signature).
-
 
 ## Forward Secrecy
 
 The compromise of a long-term signature key `sign.sk` for one of the users does not compromise the security of past sessions.
 
-If the static KEM secret key of the Initiator `kem.sk_I` or of the Responder `kem.sk_R` (depending on the use case and protocol) is compromised after the end of the session, an attacker could recalculate the shared secret `ss_I` or `ss_R`. However, since we have preserved the structure of the Key Derivation Schedule from EDHOC {{RFC9528}} (and proposals in {{I-D.pocero-authkem-edhoc}} and {{I-D.pocero-authkem-ikr-edhoc}}), it follows that this is not sufficient to derive the session key `PRK_out` in isolation. This is because `PRK_out` is derived from all shared secrets of the session, including the ephemeral KEM secret `ss_eph`. As a result, torecompute `PRK_out`, attackers would also need to compromise the ephemeral KEM secret `ss_eph` used in the session. Thus, each of the five protocols achieves Forward Secrecy (FS) provided that the ephemeral KEM secret `ss_eph` remains uncompromised.
+If the static KEM secret key of the Initiator `kem.sk_I` or of the Responder `kem.sk_R` (depending on the use case and protocol) is compromised after the end of the session, an attacker could recalculate the shared secret `ss_I` or `ss_R`. However, since we have preserved the structure of the Key Derivation Schedule from EDHOC {{RFC9528}} (and proposals in {{I-D.pocero-authkem-edhoc}} and {{I-D.pocero-authkem-ikr-edhoc}}), it follows that this is not sufficient to derive the session key `PRK_out` in isolation. This is because `PRK_out` is derived from all shared secrets of the session, including the ephemeral KEM secret `ss_eph`. As a result, to recompute `PRK_out`, attackers would also need to compromise the ephemeral KEM secret `ss_eph` used in the session. Thus, each of the five protocols achieves Forward Secrecy (FS) provided that the ephemeral KEM secret `ss_eph` remains uncompromised.
 
 
 ## Identity protection
