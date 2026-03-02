@@ -29,7 +29,7 @@
       </address>
     </author>
 
-    <date year="2026" month="February" day="26"/>
+    <date year="2026" month="March" day="01"/>
 
     
     <workgroup>LAKE</workgroup>
@@ -62,7 +62,7 @@
 <t>In this draft we:</t>
 
 <t><list style="symbols">
-  <t>propose, build on <xref target="I-D.pocero-authkem-ikr-edhoc"/>, a version of quantum-resistant EDHOC where the Initiator knows the Responder, but in a scenario where the Initiator authenticates with a signature (ML-DSA) and the Responder with a KEM (ML-KEM).</t>
+  <t>propose, building on <xref target="I-D.pocero-authkem-ikr-edhoc"/>, a version of quantum-resistant EDHOC where the Initiator knows the Responder, but in a scenario where the Initiator authenticates with a signature (ML-DSA) and the Responder with a KEM (ML-KEM).</t>
   <t>propose, building on <xref target="I-D.pocero-authkem-edhoc"/>, a version of the protocol that requires, depending on the case, either only 3 or 4 mandatory messages. This second version reduces the message overhead, but comes at an additional computational overhead for (at least) one of the two parties.</t>
 </list></t>
 
@@ -128,23 +128,23 @@ appear in all capitals, as shown here.</t>
 <t>We present here a high-level description of our PQ-EDHOC-IKR where the Initiator authenticates with a signature and the Responder with a KEM.</t>
 
 <figure><artwork><![CDATA[
-  I                                                         R
- ---                                                       ---
-  |   METHOD, SUITES_I, kem.pk_eph, kem.ct_R, C_I, EAD_1    |
-  +--------------------------------------------------------->
-  |                        message_1                        |
-  |                                                         |
-  |  kem.ct_eph, Enc(KEYSTREAM_2, ID_CRED_R, MAC_2, EAD_2)  |
-  <---------------------------------------------------------+
-  |                        message_2                        |
-  |                                                         |
-  |           AEAD(ID_CRED_I, SIGNATURE_3, EAD_3)           |
-  +--------------------------------------------------------->
-  |                        message_3                        |
-  |                                                         |
-  |                       AEAD(EAD_4)                       |
-  <- - - - - - - - - - - - - - - - - - - - - - - - - - - - -+
-  |                        message_4                        |
+  I                                                            R
+ ---                                                          ---
+  |     METHOD, SUITES_I, kem.pk_eph, kem.ct_R, C_I, EAD_1     |
+  +------------------------------------------------------------>
+  |                          message_1                         |
+  |                                                            |
+  | kem.ct_eph, Enc(KEYSTREAM_2, C_R, ID_CRED_R, MAC_2, EAD_2) |
+  <------------------------------------------------------------+
+  |                          message_2                         |
+  |                                                            |
+  |             AEAD(ID_CRED_I, SIGNATURE_3, EAD_3)            |
+  +------------------------------------------------------------>
+  |                          message_3                         |
+  |                                                            |
+  |                         AEAD(EAD_4)                        |
+  <- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+  |                          message_4                         |
 ]]></artwork></figure>
 
 <t>Figure 1: PQ-EDHOC-IKR (I sign, R kem) message flow.</t>
@@ -422,7 +422,7 @@ As proposed in <xref target="I-D.pocero-authkem-edhoc"/>, we go from 3 to 4 or 5
 Here, we want to explore a different path. Our solution aims to strike a balance between the number of mandatory messages and the computations performed by each endpoint.</t>
 
 <t>The principle is as follows. Suppose that the Initiator authenticates with a signature and the Responder uses a KEM. In this case, we will need an obligatory fourth message (for the Initiator to authenticate the Responder via the MAC, as proposed in <xref target="I-D.pocero-authkem-edhoc"/>).
-To avoid this obligatory fourth message and return to three, we propose removing the MAC <spanx style="verb">MAC_2</spanx> used to authenticate the Responder (eliminating calculations on both sides) and replacing it with a signature from the Responder (adding calculations on both sides). To do this, the Responder signs an element (which should not be chosen randomly for security reasons and which must allow the Initiator to identify the session) and sends it directly in the second message.
+To avoid this obligatory fourth message and return to three, we propose removing the MAC <spanx style="verb">MAC_2</spanx> used to authenticate the Responder (eliminating calculations on both sides) and replacing it with a signature from the Responder (adding calculations on both sides). To do this, the Responder signs an element (which should not be chosen randomly for security reasons and which must allow the Initiator to identify the session) and sends it directly (encrypted) in the second message.
 The Initiator can then immediately identify the Responder: it retrieves its identity from the encrypted message and verifies the signature. The rest of the protocol remains 'unchanged', and the calculation of <spanx style="verb">PRK_out</spanx> is possible directly after sending/receiving the third message (thus no more obligatory fourth message). The costs of calculations are compensated, but the delicate point remains the size of the second message (we will provide a bytes analysis for this message later).
 We decline this procedure when the Initiator wants to authenticate with a KEM and the Responder with a signature, or when both parties want to authenticate with KEMs. In these two latter cases, the number of mandatory messages compared to <xref target="I-D.pocero-authkem-edhoc"/> decreases from 5 to 4.</t>
 
@@ -434,23 +434,23 @@ We decline this procedure when the Initiator wants to authenticate with a KEM an
 <section anchor="protocol-overview"><name>Protocol overview</name>
 
 <figure><artwork><![CDATA[
-  I                                                             R
- ---                                                           ---
-  |          METHOD, SUITES_I, kem.pk_eph, C_I, EAD_1           |
-  +------------------------------------------------------------->
-  |                          message_1                          |
-  |                                                             |
-  | kem.ct_eph, Enc(KEYSTREAM_2, ID_CRED_R, EAD_2), SIGNATURE_2 |
-  <-------------------------------------------------------------+
-  |                          message_2                          |
-  |                                                             |
-  |        kem.ct_R, AEAD(ID_CRED_I, SIGNATURE_3, EAD_3)        |
-  +------------------------------------------------------------->
-  |                          message_3                          |
-  |                                                             |
-  |                         AEAD(EAD_4)                         |
-  <- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -+
-  |                          message_4                          |
+  I                                                                R
+ ---                                                              ---
+  |            METHOD, SUITES_I, kem.pk_eph, C_I, EAD_1            |
+  +---------------------------------------------------------------->
+  |                            message_1                           |
+  |                                                                |
+  |kem.ct_eph, Enc(KEYSTREAM_2, C_R, ID_CRED_R, EAD_2, SIGNATURE_2)|
+  <----------------------------------------------------------------+
+  |                            message_2                           |
+  |                                                                |
+  |          kem.ct_R, AEAD(ID_CRED_I, SIGNATURE_3, EAD_3)         |
+  +---------------------------------------------------------------->
+  |                            message_3                           |
+  |                                                                |
+  |                           AEAD(EAD_4)                          |
+  <- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+  |                            message_4                           |
 ]]></artwork></figure>
 
 <t>Figure 3: PQ-EDHOC, I Signs - R KEM &amp; Signs message flow.</t>
@@ -490,26 +490,23 @@ In a second step, using <spanx style="verb">kem.pk_eph</spanx> and the <spanx st
   <t><spanx style="verb">PLAINTEXT_2 = (C_R, ID_CRED_R, TH_2, EAD_2)</spanx></t>
 </list></t>
 
-<t>then ciphers this message :</t>
+<t>then signs this message :</t>
 
 <t><list style="symbols">
-  <t><spanx style="verb">CIPHERTEXT_2 = PLAINTEXT_2 XOR KEYSTREAM_2</spanx></t>
+  <t><spanx style="verb">SIGNATURE_2 = DS.Sign(sign.sk_R, (PLAINTEXT_2, sign_length))</spanx></t>
 </list></t>
 
-<t>and finally signs this ciphertext:</t>
+<t>where <spanx style="verb">sign.sk_R</spanx> is the long-term signing private key of the Responder, and finally ciphers <spanx style="verb">PLAINTEXT_2A = (PLAINTEXT_2, SIGNATURE_2)</spanx> signs this ciphertext:</t>
 
 <t><list style="symbols">
-  <t><spanx style="verb">SIGNATURE_2 = DS.Sign(sign.sk_R, (CIPHERTEXT_2, sign_length))</spanx></t>
+  <t><spanx style="verb">CIPHERTEXT_2 = PLAINTEXT_2A XOR KEYSTREAM_2</spanx>.</t>
 </list></t>
-
-<t>where <spanx style="verb">sign.sk_R</spanx> is the long-term signing private key of the Responder.</t>
 
 <t>So the second message then consists of:</t>
 
 <t><list style="symbols">
   <t><spanx style="verb">kem.ct_eph</spanx> --&gt; the ephemeral ciphertext obtained with <spanx style="verb">kem.pk_eph</spanx>;</t>
-  <t><spanx style="verb">CIPHERTEXT_2</spanx>;</t>
-  <t><spanx style="verb">SIGNATURE_2</spanx>.</t>
+  <t><spanx style="verb">CIPHERTEXT_2</spanx>.</t>
 </list></t>
 
 <t><strong>Important note:</strong> let us mention that the element signed by the Responder, for security considerations during the security analysis, could be subject to slight changes. However, it serves here to illustrate the principle proposed here.</t>
@@ -517,13 +514,13 @@ In a second step, using <spanx style="verb">kem.pk_eph</spanx> and the <spanx st
 </section>
 <section anchor="processing-message2-formatting-and-sending-message3-1"><name>Processing <spanx style="verb">message_2</spanx>, formatting and sending <spanx style="verb">message_3</spanx></name>
 
-<t>On reception of the second message, the Initiator, using <spanx style="verb">kemp.ct_eph</spanx>, can compute the ephemeral shared-secret <spanx style="verb">ss_eph</spanx>. As the Responder did, he computes <spanx style="verb">TH_2</spanx>, <spanx style="verb">PRK_2e</spanx> and <spanx style="verb">KEYSTREAM_2</spanx>. He can now decipher and retrieve : <spanx style="verb">PLAINTEXT_2 = CIPHERTEXT_2 XOR KEYSTREAM_2</spanx>.</t>
+<t>On reception of the second message, the Initiator, using <spanx style="verb">kemp.ct_eph</spanx>, can compute the ephemeral shared-secret <spanx style="verb">ss_eph</spanx>. As the Responder did, he computes <spanx style="verb">TH_2</spanx>, <spanx style="verb">PRK_2e</spanx> and <spanx style="verb">KEYSTREAM_2</spanx>. He can now decipher and retrieve : <spanx style="verb">PLAINTEXT_2A = CIPHERTEXT_2 XOR KEYSTREAM_2</spanx>.</t>
 
 <t>Thanks to <spanx style="verb">ID_CRED_R</spanx>, the Initiator obtains the long-term public keys of the Responder, <spanx style="verb">kemp.pk_R</spanx> and <spanx style="verb">sign.pk_R</spanx>.
 At first, he checks the validity of the signature of the Responder:</t>
 
 <t><list style="symbols">
-  <t><spanx style="verb">DS.Verify(sign.pk_R, (CIPHERTEXT_2, sign_length), SIGNATURE_2)</spanx>.</t>
+  <t><spanx style="verb">DS.Verify(sign.pk_R, (PLAINTEXT_2, sign_length), SIGNATURE_2)</spanx>.</t>
 </list></t>
 
 <t>If the verification algorithm returns 1, the Initiator properly authenticated the Responder. Otherwise he aborts.</t>
@@ -540,7 +537,7 @@ At first, he checks the validity of the signature of the Responder:</t>
 <t>It is now the turn of the Initiator to authenticate himself. To do so, he computes the following elements:</t>
 
 <t><list style="symbols">
-  <t><spanx style="verb">TH_3 = H(TH_2, PLAINTEXT_2, ID_CRED_R)</spanx>;</t>
+  <t><spanx style="verb">TH_3 = H(TH_2, PLAINTEXT_2A, ID_CRED_R)</spanx>;</t>
   <t><spanx style="verb">K_3 = EDHOC_KDF(PRK_3e2m, 3, TH_3, key_length)</spanx>;</t>
   <t><spanx style="verb">IV_3 = EDHOC_KDF(PRK_3e2m, 4, TH_3, iv_length)</spanx>;</t>
   <t><spanx style="verb">MAC_3 = EDHOC_KDF(PRK_3e2m, 6, ID_CRED_I, TH_3, EAD_3, mac_length_3)</spanx></t>
@@ -615,7 +612,7 @@ With <spanx style="verb">PLAINTEXT_3</spanx>, he calculates <spanx style="verb">
 <figure><artwork><![CDATA[
           +--------------------------------+
           |TH_2=H(kem.ct_eph, H(message_1))|
-          +------+----------------------+--+              PLAINTEXT_2
+          +------+----------------------+--+             PLAINTEXT_2A
                  |                      |                        |
   +------+   +---+---+   +------+   +---+--+   +-----------+   +-+-+
   |ss_eph|-->|Extract|-->|PRK_2e|-->|Expand|-->|KEYSTREAM_2|-->|XOR|
@@ -625,11 +622,6 @@ With <spanx style="verb">PLAINTEXT_3</spanx>, he calculates <spanx style="verb">
                              |                         +---------+--+
                              |                         |CIPHERTEXT_2|
                              |                         +---------+--+
-                             |                                   |
-                             |                                   v
-                             |                          +-----------+
-                             |                          |SIGNATURE_2|
-                             |                          +-----------+
                              |
            +---------+   +---+--+
            |SALT_3e2m|<--|Expand|
@@ -725,7 +717,7 @@ With <spanx style="verb">PLAINTEXT_3</spanx>, he calculates <spanx style="verb">
 <t>In this version of the protocol, we assumed that the Initiator has a pair of static signature keys <spanx style="verb">(sign.sk_I, sign.pk_I)</spanx> and that the Responder has not only a pair of static signature keys <spanx style="verb">(sign.sk_R, sign.pk_R)</spanx> but also a pair of static KEM keys <spanx style="verb">(kem.sk_R, kem.pk_R)</spanx>.
 This is not an unusual case. We can suppose that each user, when registering in a Public Key Infrastructure (PKI), provides pairs of keys of both types (signature and KEM), which they update regularly. The difference in our protocol is that the Responder is forced to use both types during the same AKE.
 From a technical point of view, the first message <spanx style="verb">message_1</spanx> and the third message <spanx style="verb">message_3</spanx> do not differ from those proposed in <xref target="I-D.pocero-authkem-edhoc"/>. Two major differences are worth noting regarding the messages.
-Firstly, here we have only an <strong>optional</strong> fourth message <spanx style="verb">message_4</spanx>. Secondly, our second message <spanx style="verb">message_2</spanx> contains an additional signature <spanx style="verb">SIGNATURE_2</spanx> (we will propose a byte analysis of this message later).
+Firstly, here we have only an <strong>optional</strong> fourth message <spanx style="verb">message_4</spanx>. Secondly, our second message <spanx style="verb">message_2</spanx> contains an additional signature <spanx style="verb">SIGNATURE_2</spanx> in <spanx style="verb">PLAINTEXT_2A</spanx> (before ciphering) (we will propose a byte analysis of this message later).
 Finally, from a computational point of view, both the Initiator and the Responder no longer need to calculate the MAC <spanx style="verb">MAC_2</spanx>. In return, the Responder must sign a message, and the Initiator must verify this signature.
 Regarding the Key Derivation Schedule, aside from the IKM which adapts to post-quantum cryptographic material, we remain close to the one of EDHOC's method 1.
 We thus have a tradeoff between the size of messages, calculation capabilities, and the number of messages.</t>
@@ -739,23 +731,23 @@ We thus have a tradeoff between the size of messages, calculation capabilities, 
 <section anchor="protocol-overview-1"><name>Protocol overview</name>
 
 <figure><artwork><![CDATA[
-  I                                                             R
- ---                                                           ---
-  |          METHOD, SUITES_I, kem.pk_eph, C_I, EAD_1           |
-  +------------------------------------------------------------->
-  |                          message_1                          |
-  |                                                             |
-  | kem.ct_eph, Enc(KEYSTREAM_2, ID_CRED_R, EAD_2, SIGNATURE_2) |
-  <-------------------------------------------------------------+
-  |                          message_2                          |
-  |                                                             |
-  |             AEAD(ID_CRED_I, EAD_3), SIGNATURE_3             |
-  +------------------------------------------------------------->
-  |                          message_3                          |
-  |                                                             |
-  |                    kem.ct_I, AEAD(EAD_4)                    |
-  <-------------------------------------------------------------+
-  |                          message_4                          |
+  I                                                                R
+ ---                                                              ---
+  |            METHOD, SUITES_I, kem.pk_eph, C_I, EAD_1            |
+  +---------------------------------------------------------------->
+  |                            message_1                           |
+  |                                                                |
+  |kem.ct_eph, Enc(KEYSTREAM_2, C_R, ID_CRED_R, EAD_2, SIGNATURE_2)|
+  <----------------------------------------------------------------+
+  |                            message_2                           |
+  |                                                                |
+  |               AEAD(ID_CRED_I, EAD_3, SIGNATURE_3)              |
+  +---------------------------------------------------------------->
+  |                            message_3                           |
+  |                                                                |
+  |                      kem.ct_I, AEAD(EAD_4)                     |
+  <----------------------------------------------------------------+
+  |                            message_4                           |
 ]]></artwork></figure>
 
 <t>Figure 5: PQ-EDHOC, I KEM &amp; Signs - R Signs message flow.</t>
@@ -833,19 +825,18 @@ He can then compute <spanx style="verb">MAC_2</spanx> on its own, and check the 
   <t><spanx style="verb">IV_3 = EDHOC_KDF(PRK_2e, 4, TH_3, iv_length)</spanx>.</t>
 </list></t>
 
-<t>He then forms <spanx style="verb">PLAINTEXT_3 = (ID_CRED_I, TH_3, EAD_3)</spanx> ciphers it with the AEAD encryption algorithm negociated in <spanx style="verb">SUITES_I</spanx>.</t>
-
-<t>Then, in order to authenticate, he signs the ciphertext:</t>
+<t>Then, in order to authenticate, he forms <spanx style="verb">PLAINTEXT_3 = (ID_CRED_I, TH_3, EAD_3)</spanx> and signs it:</t>
 
 <t><list style="symbols">
-  <t><spanx style="verb">SIGNATURE_3 = DS.Sign(sign.sk_I, (CIPHERTEXT_3, sign_length))</spanx></t>
+  <t><spanx style="verb">SIGNATURE_3 = DS.Sign(sign.sk_I, (PLAINTEXT_3, sign_length))</spanx>.</t>
 </list></t>
 
-<t>where <spanx style="verb">sign.sk_I</spanx> is the long-term signing private key of the Initiator. The third message is then composed of:</t>
+<t>where <spanx style="verb">sign.sk_I</spanx> is the long-term signing private key of the Initiator. Finally he ciphers <spanx style="verb">PLAINTEXT_3A = (PLAINTEXT_3, SIGNATURE_3)</spanx> with the AEAD encryption algorithm negociated in <spanx style="verb">SUITES_I</spanx>.</t>
+
+<t>The third message is then composed of:</t>
 
 <t><list style="symbols">
-  <t><spanx style="verb">CIPHERTEXT_3</spanx>;</t>
-  <t><spanx style="verb">SIGNATURE_3</spanx>.</t>
+  <t><spanx style="verb">CIPHERTEXT_3</spanx>.</t>
 </list></t>
 
 <t><strong>Important note:</strong> let us mention that the element signed by the Initiator, here again, for security considerations during the security analysis, could be subject to slight changes.</t>
@@ -854,10 +845,10 @@ He can then compute <spanx style="verb">MAC_2</spanx> on its own, and check the 
 <section anchor="processing-message3-formatting-and-sending-message4"><name>Processing <spanx style="verb">message_3</spanx>, formatting and sending <spanx style="verb">message_4</spanx></name>
 
 <t>On reception of <spanx style="verb">message_3</spanx>, the Responder computes <spanx style="verb">TH_3</spanx>, <spanx style="verb">K_3</spanx> and <spanx style="verb">IV_3</spanx>, and deciphers <spanx style="verb">CIPHERTEXT_3</spanx> with the AEAD decryption algorithm.
-With <spanx style="verb">PLAINTEXT_3</spanx>, he obtains the Initiator's long-term signing public key, and so he verifies the signature:</t>
+With <spanx style="verb">PLAINTEXT_3A</spanx>, he obtains the Initiator's long-term signing public key, and so he verifies the signature:</t>
 
 <t><list style="symbols">
-  <t><spanx style="verb">DS.Verify(sign.pk_I, (CIPHERTEXT_3, sign_length), SIGNATURE_3)</spanx>.</t>
+  <t><spanx style="verb">DS.Verify(sign.pk_I, (PLAINTEXT_3, sign_length), SIGNATURE_3)</spanx>.</t>
 </list></t>
 
 <t>If the verification algorithm returns 1, the Initiator is properly authenticated to the Initiator. Otherwise the Responder aborts.
@@ -866,7 +857,7 @@ With <spanx style="verb">PLAINTEXT_3</spanx>, the Responder also gets the Initia
 <t>Following that, he computes:</t>
 
 <t><list style="symbols">
-  <t><spanx style="verb">TH_4 = H(TH_3, PLAINTEXT_3, ID_CRED_I)</spanx>;</t>
+  <t><spanx style="verb">TH_4 = H(TH_3, PLAINTEXT_3A, ID_CRED_I)</spanx>;</t>
   <t><spanx style="verb">SALT_4e3m = EDHOC_KDF(PRK_2e, 5, TH_4, hash_length)</spanx>;</t>
   <t><spanx style="verb">PRK_4e3m = EDHOC_Extract(SALT_4e3m, ss_I)</spanx>;</t>
   <t><spanx style="verb">K_4 = EDHOC_KDF(PRK_4e3m, 8, TH_4, key_length)</spanx>;</t>
@@ -916,7 +907,7 @@ After that, he can compute <spanx style="verb">TH_4</spanx>, <spanx style="verb"
                              | |TH_3=H(TH_2, PLAINTEXT_2, ID_CRED_R)|
                              | +--------+---------------------------+
                              |          |
-                             |          |                 PLAINTEXT_3
+                             |          |                PLAINTEXT_3A
                              |          |                      |
                              |      +---+--+   +--------+   +--+-+
                              +------|Expand|-->|K_3/IV_3|-->|AEAD|
@@ -926,11 +917,6 @@ After that, he can compute <spanx style="verb">TH_4</spanx>, <spanx style="verb"
                              |                         +-------+----+
                              |                         |CIPHERTEXT_3|
                              |                         +-------+----+
-                             |                                 |
-                             |                                 v
-                             |                          +-----------+
-                             |                          |SIGNATURE_3|
-                             |                          +-----------+
                              |
            +---------+   +---+--+
            |SALT_4e3m|<--|Expand|
@@ -1008,7 +994,7 @@ We can note that in this two previous cases, the Key Derivation Schedule remains
 For the same reasons, this is not an unusual case.</t>
 
 <t>From a technical point of view, messages <spanx style="verb">message_1</spanx>,<spanx style="verb">message_2</spanx> and <spanx style="verb">message_4</spanx> do not differ from those proposed in <xref target="I-D.pocero-authkem-edhoc"/>. Here again, two major differences are worth noting regarding the messages.
-Firstly, here we no more have a fifth mandatory message <spanx style="verb">message_5</spanx>. Secondly, our third message <spanx style="verb">message_3</spanx> contains an additional signature <spanx style="verb">SIGNATURE_3</spanx> (as this was the case for the previous protocol we propose, with <spanx style="verb">SIGNATURE_2</spanx>)(we will propose a byte analysis of this message later).
+Firstly, here we no more have a fifth mandatory message <spanx style="verb">message_5</spanx>. Secondly, our third message <spanx style="verb">message_3</spanx> contains an additional signature <spanx style="verb">SIGNATURE_3</spanx> in <spanx style="verb">PLAINTEXT_3A</spanx> (before ciphering) (as this was the case for the previous protocol we propose, with <spanx style="verb">SIGNATURE_2</spanx>)(we will propose a byte analysis of this message later).
 Finally, from a computational point of view, both the Initiator and the Responder no longer need to calculate the MAC <spanx style="verb">MAC_3</spanx>. In return, in the same vein, the Initiator must sign a message, and the Responder must verify this signature, in order to authenticate the Initiator, and send him the KEM ciphertext <spanx style="verb">kem.ct_I</spanx>.
 Regarding the Key Derivation Schedule, aside from the IKM which adapts to post-quantum cryptographic material, we remain close to the one of EDHOC's method 2.
 So compared to <xref target="I-D.pocero-authkem-edhoc"/>, we reduce the number of mandatory messages, from 5 to 4, and again we obtain a tradeoff between the size of messages, calculation capabilities, and the number of messages.</t>
@@ -1022,23 +1008,23 @@ So compared to <xref target="I-D.pocero-authkem-edhoc"/>, we reduce the number o
 <section anchor="protocol-overview-2"><name>Protocol overview</name>
 
 <figure><artwork><![CDATA[
-  I                                                             R
- ---                                                           ---
-  |          METHOD, SUITES_I, kem.pk_eph, C_I, EAD_1           |
+  I                                                              R
+ ---                                                            ---
+  |           METHOD, SUITES_I, kem.pk_eph, C_I, EAD_1           |
+  +-------------------------------------------------------------->
+  |                           message_1                          |
+  |                                                              |
+  |      kem.ct_eph, Enc(KEYSTREAM_2, C_R, ID_CRED_R, EAD_2)     |
+  <--------------------------------------------------------------+
+  |                           message_2                          |
+  |                                                              |
+  |         kem.ct_R, AEAD(ID_CRED_I, EAD_3, SIGNATURE_3)        |
   +------------------------------------------------------------->
-  |                          message_1                          |
-  |                                                             |
-  |       kem.ct_eph, Enc(KEYSTREAM_2, ID_CRED_R, EAD_2)        |
-  <-------------------------------------------------------------+
-  |                          message_2                          |
-  |                                                             |
-  |        kem.ct_R, AEAD(ID_CRED_I, EAD_3), SIGNATURE_3        |
-  +------------------------------------------------------------->
-  |                          message_3                          |
-  |                                                             |
-  |                kem.ct_I, AEAD(EAD_4, MAC_2)                 |
-  <-------------------------------------------------------------+
-  |                          message_4                          |
+  |                           message_3                          |
+  |                                                              |
+  |                 kem.ct_I, AEAD(EAD_4, MAC_2)                 |
+  <--------------------------------------------------------------+
+  |                           message_4                          |
 ]]></artwork></figure>
 
 <t>Figure 7: PQ-EDHOC, I KEM &amp; Signs - R KEM message flow.</t>
@@ -1103,20 +1089,19 @@ In a second step, using <spanx style="verb">kem.pk_eph</spanx> and the <spanx st
   <t><spanx style="verb">IV_3 = EDHOC_KDF(PRK_3e2m, 4, TH_3, iv_length)</spanx>.</t>
 </list></t>
 
-<t>He then forms <spanx style="verb">PLAINTEXT_3 = (ID_CRED_I, TH_3, EAD_3)</spanx> ciphers it with the AEAD encryption algorithm negociated in <spanx style="verb">SUITES_I</spanx>.</t>
-
-<t>Then, in order to authenticate, he signs the ciphertext:</t>
+<t>Then, in order to authenticate, he then forms <spanx style="verb">PLAINTEXT_3 = (ID_CRED_I, TH_3, EAD_3)</spanx> and signs it:</t>
 
 <t><list style="symbols">
-  <t><spanx style="verb">SIGNATURE_3 = DS.Sign(sign.sk_I, (CIPHERTEXT_3, sign_length))</spanx></t>
+  <t><spanx style="verb">SIGNATURE_3 = DS.Sign(sign.sk_I, (PLAINTEXT_3, sign_length))</spanx></t>
 </list></t>
 
-<t>where <spanx style="verb">sign.sk_I</spanx> is the long-term signing private key of the Initiator. The third message is then composed of:</t>
+<t>where <spanx style="verb">sign.sk_I</spanx> is the long-term signing private key of the Initiator. Finally he sets <spanx style="verb">PLAINTEXT_3A = (PLAINTEXT_3, SIGNATURE_3)</spanx> and ciphers it with the AEAD encryption algorithm negociated in <spanx style="verb">SUITES_I</spanx>.</t>
+
+<t>The third message is then composed of:</t>
 
 <t><list style="symbols">
   <t><spanx style="verb">kem.ct_R</spanx>;</t>
-  <t><spanx style="verb">CIPHERTEXT_3</spanx>;</t>
-  <t><spanx style="verb">SIGNATURE_3</spanx>.</t>
+  <t><spanx style="verb">CIPHERTEXT_3</spanx>.</t>
 </list></t>
 
 </section>
@@ -1125,10 +1110,10 @@ In a second step, using <spanx style="verb">kem.pk_eph</spanx> and the <spanx st
 <t>On reception of <spanx style="verb">message_3</spanx>, the Responder computes <spanx style="verb">TH_3</spanx>. He also used the <spanx style="verb">KEM.Decapsulation</spanx> algorithm with its long-term KEM private key <spanx style="verb">kem.sk_R</spanx> and the KEM ciphertext <spanx style="verb">kem.ct_R</spanx>, to obtain the shared-secret <spanx style="verb">ss_R</spanx>.</t>
 
 <t>He can now compute <spanx style="verb">SALT_3e2m</spanx>, <spanx style="verb">PRK_3e2m</spanx>, <spanx style="verb">K_3</spanx>, and <spanx style="verb">IV_3</spanx> as the Initiator did, and deciphers <spanx style="verb">CIPHERTEXT_3</spanx> with the AEAD decryption algorithm.
-With <spanx style="verb">PLAINTEXT_3</spanx>, he obtains <spanx style="verb">kem.pk_I</spanx> and <spanx style="verb">sign.pk_I</spanx>, and verifies the signature:</t>
+With <spanx style="verb">PLAINTEXT_3A</spanx>, he obtains <spanx style="verb">kem.pk_I</spanx> and <spanx style="verb">sign.pk_I</spanx>, and verifies the signature:</t>
 
 <t><list style="symbols">
-  <t><spanx style="verb">DS.Verify(sign.pk_I, (CIPHERTEXT_3, sign_length), SIGNATURE_3)</spanx>.</t>
+  <t><spanx style="verb">DS.Verify(sign.pk_I, (PLAINTEXT_3, sign_length), SIGNATURE_3)</spanx>.</t>
 </list></t>
 
 <t>If the verification algorithm returns 1, the Initiator is properly authenticated to the Initiator. Otherwise the Responder aborts.</t>
@@ -1138,7 +1123,7 @@ With <spanx style="verb">PLAINTEXT_3</spanx>, he obtains <spanx style="verb">kem
 <t>Following that, he computes:</t>
 
 <t><list style="symbols">
-  <t><spanx style="verb">TH_4 = H(TH_3, PLAINTEXT_3, ID_CRED_I)</spanx>;</t>
+  <t><spanx style="verb">TH_4 = H(TH_3, PLAINTEXT_3A, ID_CRED_I)</spanx>;</t>
   <t><spanx style="verb">SALT_4e3m = EDHOC_KDF(PRK_3e2m, 5, TH_4, hash_length)</spanx>;</t>
   <t><spanx style="verb">PRK_4e3m = EDHOC_Extract(SALT_4e3m, ss_I)</spanx>;</t>
   <t><spanx style="verb">K_4 = EDHOC_KDF(PRK_4e3m, 8, TH_4, key_length)</spanx>;</t>
@@ -1192,7 +1177,7 @@ After that, he can compute <spanx style="verb">TH_4</spanx>, <spanx style="verb"
                |               |TH_3=H(TH_2, PLAINTEXT_2, ID_CRED_R)|
                |               +-------+----------------------------+
                |                       |
-               |                       |                  PLAINTEXT_3
+               |                       |                 PLAINTEXT_3A
                |                       |                       |
   +----+   +---+---+   +--------+   +--+---+   +--------+   +--+-+
   |ss_R|-->|Extract|-->|PRK_3e2m|-->|Expand|-->|K_3/IV_3|-->|AEAD|
@@ -1202,11 +1187,7 @@ After that, he can compute <spanx style="verb">TH_4</spanx>, <spanx style="verb"
                              |                         +-------+----+
                              |                         |CIPHERTEXT_3|
                              |                         +-------+----+
-                             |                                 |
-                             |                                 v
-                             |                          +-----------+
-                             |                          |SIGNATURE_3|
-                             |                          +-----------+
+                             |
            +---------+   +---+--+
            |SALT_4e3m|<--|Expand|
            +---+-----+   +---+--+
@@ -1291,7 +1272,7 @@ After that, he can compute <spanx style="verb">TH_4</spanx>, <spanx style="verb"
 The advantage of this alternative is that it preserves Responder authentication via a KEM and simply asks the Initiator to sign its identity. Additionally, there is no longer need to calculate the MAC <spanx style="verb">MAC_3</spanx>.
 In this variant, we assumed that the Initiator has a pair of static signature keys <spanx style="verb">(sign.sk_I, sign.pk_I)</spanx> and also a pair of static KEM keys <spanx style="verb">(kem.sk_I, kem.pk_I)</spanx>, and that the Responder has only a pair of static KEM keys <spanx style="verb">(kem.sk_R, kem.pk_R)</spanx>. As already explain, this is not an unusual case.
 From a technical point of view, messages <spanx style="verb">message_1</spanx>,<spanx style="verb">message_2</spanx> and <spanx style="verb">message_4</spanx> do not differ from those proposed in <xref target="I-D.pocero-authkem-edhoc"/>. Again, two major differences are worth noting regarding the messages.
-Firstly, here we no more have a fifth mandatory message <spanx style="verb">message_5</spanx>. Secondly, our third message <spanx style="verb">message_3</spanx> contains an additional signature <spanx style="verb">SIGNATURE_3</spanx> (as this was the case for protocols that we have proposed above, with <spanx style="verb">SIGNATURE_2</spanx> or <spanx style="verb">SIGNATURE_3</spanx>)(we will propose a byte analysis of this message later).
+Firstly, here we no more have a fifth mandatory message <spanx style="verb">message_5</spanx>. Secondly, our third message <spanx style="verb">message_3</spanx> contains an additional signature <spanx style="verb">SIGNATURE_3</spanx> in <spanx style="verb">PLAINTEXT_3A</spanx>(befoire ciphering) (as this was the case for protocols that we have proposed above, with <spanx style="verb">SIGNATURE_2</spanx> or <spanx style="verb">SIGNATURE_3</spanx>)(we will propose a byte analysis of this message later).
 Finally, from a computational point of view, both the Initiator and the Responder no longer need to calculate the MAC <spanx style="verb">MAC_3</spanx>. In return, here again, the Initiator must sign a message, and the Responder must verify this signature, in order to authenticate the Initiator, and send him the KEM ciphertext <spanx style="verb">kem.ct_I</spanx>.
 Regarding the Key Derivation Schedule, aside from the IKM which adapts to post-quantum cryptographic material, we remain close to the one of EDHOC's method 3.
 So compared to <xref target="I-D.pocero-authkem-edhoc"/>, we reduce the number of mandatory messages, from 5 to 4, and again we obtain a tradeoff between the size of messages, calculation capabilities, and the number of messages.</t>
@@ -1305,23 +1286,23 @@ So compared to <xref target="I-D.pocero-authkem-edhoc"/>, we reduce the number o
 <section anchor="protocol-overview-3"><name>Protocol overview</name>
 
 <figure><artwork><![CDATA[
-  I                                                             R
- ---                                                           ---
-  |          METHOD, SUITES_I, kem.pk_eph, C_I, EAD_1           |
-  +------------------------------------------------------------->
-  |                          message_1                          |
-  |                                                             |
-  | kem.ct_eph, Enc(KEYSTREAM_2, ID_CRED_R, EAD_2), SIGNATURE_2 |
-  <-------------------------------------------------------------+
-  |                          message_2                          |
-  |                                                             |
-  |        kem.ct_R, AEAD(ID_CRED_I, EAD_3), SIGNATURE_3        |
-  +------------------------------------------------------------->
-  |                          message_3                          |
-  |                                                             |
-  |                    kem.ct_I, AEAD(EAD_4)                    |
-  <-------------------------------------------------------------+
-  |                          message_4                          |
+  I                                                                R
+ ---                                                              ---
+  |            METHOD, SUITES_I, kem.pk_eph, C_I, EAD_1            |
+  +---------------------------------------------------------------->
+  |                            message_1                           |
+  |                                                                |
+  |kem.ct_eph, Enc(KEYSTREAM_2, C_R, ID_CRED_R, EAD_2, SIGNATURE_2)|
+  <----------------------------------------------------------------+
+  |                            message_2                           |
+  |                                                                |
+  |          kem.ct_R, AEAD(ID_CRED_I, EAD_3, SIGNATURE_3)         |
+  +---------------------------------------------------------------->
+  |                            message_3                           |
+  |                                                                |
+  |                      kem.ct_I, AEAD(EAD_4)                     |
+  <----------------------------------------------------------------+
+  |                            message_4                           |
 ]]></artwork></figure>
 
 <t>Figure 9: PQ-EDHOC, I KEM &amp; Signs - R KEM &amp; Signs message flow.</t>
@@ -1361,37 +1342,34 @@ In a second step, using <spanx style="verb">kem.pk_eph</spanx> and the <spanx st
   <t><spanx style="verb">PLAINTEXT_2 = (C_R, ID_CRED_R, TH_2, EAD_2)</spanx></t>
 </list></t>
 
-<t>then ciphers this message :</t>
-
-<t><list style="symbols">
-  <t><spanx style="verb">CIPHERTEXT_2 = PLAINTEXT_2 XOR KEYSTREAM_2</spanx></t>
-</list></t>
-
-<t>and finally signs this ciphertext:</t>
+<t>then signs this message :</t>
 
 <t><list style="symbols">
   <t><spanx style="verb">SIGNATURE_2 = DS.Sign(sign.sk_R, (CIPHERTEXT_2, sign_length))</spanx></t>
 </list></t>
 
-<t>where <spanx style="verb">sign.sk_R</spanx> is the long-term signing private key of the Responder.</t>
+<t>where <spanx style="verb">sign.sk_R</spanx> is the long-term signing private key of the Responder. And finally he ciphers <spanx style="verb">PLAINTEXT_2A = (PLAINTEXT_2, SIGNATURE_2)</spanx>:</t>
+
+<t><list style="symbols">
+  <t><spanx style="verb">CIPHERTEXT_2 = PLAINTEXT_2A XOR KEYSTREAM_2</spanx></t>
+</list></t>
 
 <t>So the second message then consists of:</t>
 
 <t><list style="symbols">
   <t><spanx style="verb">kem.ct_eph</spanx> --&gt; the ephemeral ciphertext obtained with <spanx style="verb">kem.pk_eph</spanx>;</t>
-  <t><spanx style="verb">CIPHERTEXT_2</spanx>;</t>
-  <t><spanx style="verb">SIGNATURE_2</spanx>.</t>
+  <t><spanx style="verb">CIPHERTEXT_2</spanx>.</t>
 </list></t>
 
 </section>
 <section anchor="processing-message2-formatting-and-sending-message3-4"><name>Processing <spanx style="verb">message_2</spanx>, formatting and sending <spanx style="verb">message_3</spanx></name>
-<t>On reception of the second message, the Initiator, using <spanx style="verb">kemp.ct_eph</spanx>, can compute the ephemeral shared-secret <spanx style="verb">ss_eph</spanx>. As the Responder did, he computes <spanx style="verb">TH_2</spanx>, <spanx style="verb">PRK_2e</spanx> and <spanx style="verb">KEYSTREAM_2</spanx>. He can now decipher and retrieve : <spanx style="verb">PLAINTEXT_2 = CIPHERTEXT_2 XOR KEYSTREAM_2</spanx>.</t>
+<t>On reception of the second message, the Initiator, using <spanx style="verb">kemp.ct_eph</spanx>, can compute the ephemeral shared-secret <spanx style="verb">ss_eph</spanx>. As the Responder did, he computes <spanx style="verb">TH_2</spanx>, <spanx style="verb">PRK_2e</spanx> and <spanx style="verb">KEYSTREAM_2</spanx>. He can now decipher and retrieve : <spanx style="verb">PLAINTEXT_2A = CIPHERTEXT_2 XOR KEYSTREAM_2</spanx>.</t>
 
 <t>Thanks to <spanx style="verb">ID_CRED_R</spanx>, the Initiator obtains the long-term public keys of the Responder, <spanx style="verb">kemp.pk_R</spanx> and <spanx style="verb">sign.pk_R</spanx>.
 At first, he checks the validity of the signature of the Responder:</t>
 
 <t><list style="symbols">
-  <t><spanx style="verb">DS.Verify(sign.pk_R, (CIPHERTEXT_2, sign_length), SIGNATURE_2)</spanx>.</t>
+  <t><spanx style="verb">DS.Verify(sign.pk_R, (PLAINTEXT_2, sign_length), SIGNATURE_2)</spanx>.</t>
 </list></t>
 
 <t>If the verification algorithm returns 1, the Initiator properly authenticated the Responder. Otherwise he aborts.</t>
@@ -1408,37 +1386,34 @@ At first, he checks the validity of the signature of the Responder:</t>
 <t>It is now the turn of the Initiator to authenticate himself. To do so, he computes the following elements:</t>
 
 <t><list style="symbols">
-  <t><spanx style="verb">TH_3 = H(TH_2, PLAINTEXT_2, ID_CRED_R)</spanx>;</t>
+  <t><spanx style="verb">TH_3 = H(TH_2, PLAINTEXT_2A, ID_CRED_R)</spanx>;</t>
   <t><spanx style="verb">K_3 = EDHOC_KDF(PRK_3e2m, 3, TH_3, key_length)</spanx>;</t>
   <t><spanx style="verb">IV_3 = EDHOC_KDF(PRK_3e2m, 4, TH_3, iv_length)</spanx>;</t>
 </list></t>
 
-<t>assembles <spanx style="verb">PLAINTEXT_3 = (ID_CRED_I, TH_3, EAD_3)</spanx>, and ciphers <spanx style="verb">PLAINTEXT_3</spanx> with the AEAD encryption algorithm negociated in <spanx style="verb">SUITES_I</spanx>.</t>
-
-<t>Then comes the signature:</t>
+<t>assembles <spanx style="verb">PLAINTEXT_3 = (ID_CRED_I, TH_3, EAD_3)</spanx>, and signs <spanx style="verb">PLAINTEXT_3</spanx>:</t>
 
 <t><list style="symbols">
-  <t><spanx style="verb">SIGNATURE_3 = DS.Sign(sign.sk_I, (CIPHERTEXT_3, sign_length))</spanx></t>
+  <t><spanx style="verb">SIGNATURE_3 = DS.Sign(sign.sk_I, (PLAINTEXT_3, sign_length))</spanx></t>
 </list></t>
 
-<t>where <spanx style="verb">sign.sk_I</spanx> is the long-term signing private key of the Initiator.</t>
+<t>where <spanx style="verb">sign.sk_I</spanx> is the long-term signing private key of the Initiator. Then, with the AEAD encryption algorithm negociated in <spanx style="verb">SUITES_I</spanx>, he ciphers <spanx style="verb">PLAINTEXT_3A = (PLAINTEXT_3,SIGNATURE_3)</spanx> as <spanx style="verb">CIPHERTEXT_3</spanx>.</t>
 
 <t>The third message is then composed of:</t>
 
 <t><list style="symbols">
   <t><spanx style="verb">kem.ct_R</spanx>;</t>
-  <t><spanx style="verb">CIPHERTEXT_3</spanx>;</t>
-  <t><spanx style="verb">SIGNATURE_3</spanx>.</t>
+  <t><spanx style="verb">CIPHERTEXT_3</spanx>.</t>
 </list></t>
 
 </section>
 <section anchor="processing-message3-formatting-and-sending-message4-2"><name>Processing <spanx style="verb">message_3</spanx>, formatting and sending <spanx style="verb">message_4</spanx></name>
 
 <t>On reception of <spanx style="verb">message_3</spanx>, the Responder computes <spanx style="verb">TH_3</spanx>, <spanx style="verb">K_3</spanx> and <spanx style="verb">IV_3</spanx>, and deciphers <spanx style="verb">CIPHERTEXT_3</spanx> with the AEAD decryption algorithm.
-With <spanx style="verb">PLAINTEXT_3</spanx>, he obtains the Initiator's long-term public keys <spanx style="verb">kem.pk_I</spanx> and <spanx style="verb">sign.pk_I</spanx>, and so he verifies the signature:</t>
+With <spanx style="verb">PLAINTEXT_3A</spanx>, he obtains the Initiator's long-term public keys <spanx style="verb">kem.pk_I</spanx> and <spanx style="verb">sign.pk_I</spanx>, and so he verifies the signature:</t>
 
 <t><list style="symbols">
-  <t><spanx style="verb">DS.Verify(sign.pk_I, (CIPHERTEXT_3, sign_length), SIGNATURE_3)</spanx>.</t>
+  <t><spanx style="verb">DS.Verify(sign.pk_I, (PLAINTEXT_3, sign_length), SIGNATURE_3)</spanx>.</t>
 </list></t>
 
 <t>If the verification algorithm returns 1, the Initiator is properly authenticated to the Initiator. Otherwise the Responder aborts.
@@ -1447,7 +1422,7 @@ He then uses the <spanx style="verb">KEM.Encapsulation</spanx> algorithm to gene
 <t>Following that, he computes:</t>
 
 <t><list style="symbols">
-  <t><spanx style="verb">TH_4 = H(TH_3, PLAINTEXT_3, ID_CRED_I)</spanx>;</t>
+  <t><spanx style="verb">TH_4 = H(TH_3, PLAINTEXT_3A, ID_CRED_I)</spanx>;</t>
   <t><spanx style="verb">SALT_4e3m = EDHOC_KDF(PRK_3e2m, 5, TH_4, hash_length)</spanx>;</t>
   <t><spanx style="verb">PRK_4e3m = EDHOC_Extract(SALT_4e3m, ss_I)</spanx>;</t>
   <t><spanx style="verb">K_4 = EDHOC_KDF(PRK_4e3m, 8, TH_4, key_length)</spanx>;</t>
@@ -1478,7 +1453,7 @@ After that, he can compute <spanx style="verb">TH_4</spanx>, <spanx style="verb"
 <figure><artwork><![CDATA[
           +--------------------------------+
           |TH_2=H(kem.ct_eph, H(message_1))|
-          +------+----------------------+--+              PLAINTEXT_2
+          +------+----------------------+--+             PLAINTEXT_2A
                  |                      |                        |
   +------+   +---+---+   +------+   +---+--+   +-----------+   +-+-+
   |ss_eph|-->|Extract|-->|PRK_2e|-->|Expand|-->|KEYSTREAM_2|-->|XOR|
@@ -1488,11 +1463,6 @@ After that, he can compute <spanx style="verb">TH_4</spanx>, <spanx style="verb"
                              |                         +---------+--+
                              |                         |CIPHERTEXT_2|
                              |                         +---------+--+
-                             |                                   |
-                             |                                   v
-                             |                          +-----------+
-                             |                          |SIGNATURE_2|
-                             |                          +-----------+
                              |
            +---------+   +---+--+
            |SALT_3e2m|<--|Expand|
@@ -1501,7 +1471,7 @@ After that, he can compute <spanx style="verb">TH_4</spanx>, <spanx style="verb"
                |               |TH_3=H(TH_2, PLAINTEXT_2, ID_CRED_R)|
                |               +-------+----------------------------+
                |                       |
-               |                       |                  PLAINTEXT_3
+               |                       |                 PLAINTEXT_3A
                |                       |                       |
   +----+   +---+---+   +--------+   +--+---+   +--------+   +--+-+
   |ss_R|-->|Extract|-->|PRK_3e2m|-->|Expand|-->|K_3/IV_3|-->|AEAD|
@@ -1511,11 +1481,7 @@ After that, he can compute <spanx style="verb">TH_4</spanx>, <spanx style="verb"
                              |                         +-------+----+
                              |                         |CIPHERTEXT_3|
                              |                         +-------+----+
-                             |                                 |
-                             |                                 v
-                             |                          +-----------+
-                             |                          |SIGNATURE_3|
-                             |                          +-----------+
+                             |
            +---------+   +---+--+
            |SALT_4e3m|<--|Expand|
            +---+-----+   +---+--+                         PLAINTEXT_4
@@ -1591,7 +1557,7 @@ After that, he can compute <spanx style="verb">TH_4</spanx>, <spanx style="verb"
 <t>We conclude all these descriptions, with a last one variant which combines our PQ-EDHOC I KEM &amp; Signs - R Signs protocol with our PQ-EDHOC I Signs - R KEM &amp; Signs protocol. In this situation, both the Initiator and the Responder will authenticate using a signature, and there will be no longer MACs <spanx style="verb">MAC_2</spanx> and <spanx style="verb">MAC_3</spanx> to compute.
 In this variant, we assumed that the Initiator has a pair of static signature keys <spanx style="verb">(sign.sk_I, sign.pk_I)</spanx> and also a pair of static KEM keys <spanx style="verb">(kem.sk_I, kem.pk_I)</spanx>, and that the Responder has a pair of static signature keys <spanx style="verb">(sign.sk_R, sign.pk_R)</spanx> and also a pair of static KEM keys <spanx style="verb">(kem.sk_R, kem.pk_R)</spanx>. As already explain, this is not an unusual case.
 From a technical point of view, only message <spanx style="verb">message_1</spanx> remains unchanged as the one proposed in <xref target="I-D.pocero-authkem-edhoc"/>. Here, four major differences are worth noting regarding the messages.
-Firstly, here we no more have a fifth mandatory message <spanx style="verb">message_5</spanx>. Secondly, our second and third messages <spanx style="verb">message_2</spanx> and <spanx style="verb">message_3</spanx> contain each an additional signature <spanx style="verb">SIGNATURE_2</spanx> and <spanx style="verb">SIGNATURE_3</spanx> respectively. Moreover, the plaintext <spanx style="verb">PLAINTEXT_4</spanx> no longer includes <spanx style="verb">MAC_2</spanx>, which implies that the ciphertext <spanx style="verb">CIPHERTEXT_4</spanx> is lighter, and so is our fourth message <spanx style="verb">message_4</spanx> (we will propose a byte analysis of these messages later).
+Firstly, here we no more have a fifth mandatory message <spanx style="verb">message_5</spanx>. Secondly, our second and third messages <spanx style="verb">message_2</spanx> and <spanx style="verb">message_3</spanx> contain each an additional signature <spanx style="verb">SIGNATURE_2</spanx> and <spanx style="verb">SIGNATURE_3</spanx> respectively in <spanx style="verb">PLAINTEXT_2A</spanx> and in <spanx style="verb">PLAINTEXT_3A</spanx>. Moreover, the plaintext <spanx style="verb">PLAINTEXT_4</spanx> no longer includes <spanx style="verb">MAC_2</spanx>, which implies that the ciphertext <spanx style="verb">CIPHERTEXT_4</spanx> is lighter, and so is our fourth message <spanx style="verb">message_4</spanx> (we will propose a byte analysis of these messages later).
 Finally, from a computational point of view, both the Initiator and the Responder no longer need to calculate the MACs <spanx style="verb">MAC_2</spanx> and <spanx style="verb">MAC_3</spanx>. In return, both the Initiator and the Responder must sign a message and verify signature, in order to authenticate themselves.
 This allows the Initiator to authenticate the Responder directly when he receives the second message, and vice versa for the Responder when he receives the third message. That is why we no longer need <spanx style="verb">MAC_2</spanx> and <spanx style="verb">MAC_3</spanx> in the fourth and fifth messages.
 Regarding the Key Derivation Schedule, aside from the IKM which adapts to post-quantum cryptographic material, we remain close to the one of EDHOC's method 3.
@@ -1603,18 +1569,29 @@ So compared to <xref target="I-D.pocero-authkem-edhoc"/>, we reduce the number o
 <section anchor="security-considerations"><name>Security Considerations</name>
 
 <t>We propose here a global security analysis of our five proposals (if necessary, we number the protocols from 1 to 5 according to their order of appearance in the document).
-At the end of every of the five handshakes, each endpoint securely acquires the session key <spanx style="verb">PRK_out</spanx> with mutual authentication.
-For protocol 1, this authentication is ensured by the Responder's MAC and the Initiator's signature on its own MAC, similar to EDHOC method 1.
-For protocol 2, it is ensured by the Respond's signature, and the Initiator's signature on its own MAC. Protocol 3 ensured this in a reverse way, since it is a mirror version of protocol 2.
-For protocol 4, this authentication is ensured by the Responder's MAC and the Initiator's signature (not on its MAC this time). And for protocol 5, this is ensured by the signatures of the Initiator and the Responder.</t>
+At the end of each handshake, both endpoints:
+  - securely compute the session key <spanx style="verb">PRK_out</spanx>;
+  - securely authenticate their partner.</t>
 
-<t>Our hybrid approaches (combining KEM and signature for authentication) follow the structure of the Key Derivation Schedule in EDHOC <xref target="RFC9528"/>. The use of a 'static' shared-secret in key derivation strengthens the security of the key between two non-compromised parties (e.g., if the ephemeral KEM key of the session is compromised), and to some extent also strengthens authentication (e.g., if a long-term signature secret key is compromised).</t>
+<t>For the first protocol, the Responder authenticates through the MAC in <spanx style="verb">message_2</spanx>, while the Initiator authenticates through the signature produced in <spanx style="verb">message_3</spanx>. This approach is similar to that of EDHOC <xref target="RFC9528"/> in method 1.</t>
+
+<t>For the second protocol, the Responder's authentication is guaranteed by its signature in <spanx style="verb">message_2</spanx>, while the Initiator authenticates through its signature in <spanx style="verb">message_3</spanx>. Note that in this protocol variant, the Responder's signature is securely ciphered in the second message.</t>
+
+<t>The third protocol is essentially a mirrored version of the second protocol, and the authentication methods of the Initiator and the Responder are switched.</t>
+
+<t>For the fourth protocol, this authentication is ensured by the Responder's MAC, sent in <spanx style="verb">message_4</spanx>, and the Initiator's signature, sent encrypted in <spanx style="verb">message_3</spanx>.</t>
+
+<t>Finally, for the fifth protocol, authentication is guaranteed by the Initiator's and Responder's signatures, both sent encrypted in the third and second message respectively.</t>
+
+<t>Our hybrid approaches (combining KEM and signature for authentication) follow the structure of the Key Derivation Schedule in EDHOC <xref target="RFC9528"/>. The use of a 'static' shared-secret in key derivation strengthens the security of the key between two non-compromised parties (e.g., if the ephemeral KEM key of the session is compromised), and to some extent also strengthens forward-security and authentication (e.g., if a long-term signature secret key is compromised)</t>
 
 <section anchor="forward-secrecy"><name>Forward Secrecy</name>
 
-<t>The compromise of a long-term signature key <spanx style="verb">sign.sk</spanx> for one of the users does not compromise the security of past sessions.</t>
+<t>A forward-secrecy attacker could compromise the long-term signature key <spanx style="verb">sign.sk</spanx> and/or the static KEM secret key <spanx style="verb">kem.sk</spanx> for one of the endpoints, after that particular endpoint has completed a protocol session. The attacker's goal is to compromise the session key <spanx style="verb">PRK_out</spanx>.</t>
 
-<t>If the static KEM secret key of the Initiator <spanx style="verb">kem.sk_I</spanx> or of the Responder <spanx style="verb">kem.sk_R</spanx> (depending on the use case and protocol) is compromised after the end of the session, an attacker could recalculate the shared secret <spanx style="verb">ss_I</spanx> or <spanx style="verb">ss_R</spanx>. However, since we have preserved the structure of the Key Derivation Schedule from EDHOC <xref target="RFC9528"/> (and proposals in <xref target="I-D.pocero-authkem-edhoc"/> and <xref target="I-D.pocero-authkem-ikr-edhoc"/>), it follows that this is not sufficient to derive the session key <spanx style="verb">PRK_out</spanx> in isolation. This is because <spanx style="verb">PRK_out</spanx> is derived from all shared secrets of the session, including the ephemeral KEM secret <spanx style="verb">ss_eph</spanx>. As a result, to recompute <spanx style="verb">PRK_out</spanx>, attackers would also need to compromise the ephemeral KEM secret <spanx style="verb">ss_eph</spanx> used in the session. Thus, each of the five protocols achieves Forward Secrecy (FS) provided that the ephemeral KEM secret <spanx style="verb">ss_eph</spanx> remains uncompromised.</t>
+<t>First note that compromising long-term signature keys does not compromise the security of past sessions.</t>
+
+<t>If the static KEM secret key of the Initiator <spanx style="verb">kem.sk_I</spanx> or of the Responder <spanx style="verb">kem.sk_R</spanx> (depending on the use case and protocol) is compromised, the attacker can retrieve the shared secrets <spanx style="verb">ss_I</spanx> or <spanx style="verb">ss_R</spanx>. However, this knowledge is insufficient to learn <spanx style="verb">PRK_out</spanx>. This is because, as in the case of EDHOC <xref target="RFC9528"/> (and similarly to the recent proposals <xref target="I-D.pocero-authkem-edhoc"/> and <xref target="I-D.pocero-authkem-ikr-edhoc"/>), <spanx style="verb">PRK_out</spanx> is derived from all shared secrets of the session, including the ephemeral KEM secret <spanx style="verb">ss_eph</spanx>. As a result, to recompute <spanx style="verb">PRK_out</spanx>, attackers would also need to compromise the ephemeral KEM secret <spanx style="verb">ss_eph</spanx> used in the session. Thus, each of the five protocols achieves Forward Secrecy (FS) provided that the ephemeral KEM secret <spanx style="verb">ss_eph</spanx> remains uncompromised.</t>
 
 </section>
 <section anchor="identity-protection"><name>Identity protection</name>
@@ -1627,17 +1604,10 @@ However, we want to point out a disputed aspect regarding this property. We thin
 But this security game seems difficult to adapt to the protocol proposed in <xref target="I-D.pocero-authkem-ikr-edhoc"/> due to the encryption present in the first message.
 We suggest a more global approach for this property, possibly based on <xref target="PPAKE"/>.</t>
 
-<t>To return to a more classical definition of Identity Protection property, protocols 2 to 5 keep the same structure as EDHOC, and so inherit of this property. In other words, the identities of the Initiator and the Responder are never sent in plain text, always encrypted, and only from the second message onwards. According to the definition in <xref target="CottierPointcheval23"/>, protocols 2 to 5 verify the Identity Protection property against passive attackers for the Responder and against active attackers for the Initiator.
+<t>To return to a more classical definition of Identity Protection property, protocols 2 to 5 keep a similar structure as EDHOC, and so inherit of this property. In other words, the identities of the Initiator and the Responder are never sent in plaintext, always encrypted, and only from the second message onwards. Moreover, the various signatures executed by the endpoints are encrypted in the messages and therefore do not appear in clear in the exchange, as this is the case in the original EDHOC protocol.</t>
+
+<t>According to the definition in <xref target="CottierPointcheval23"/>, protocols 2 to 5 verify the Identity Protection property against passive attackers for the Responder and against active attackers for the Initiator.
 However, we can still keep our previous proposal in mind and try to prove this property in a more general framework for these protocols as well.</t>
-
-</section>
-<section anchor="key-compromise-impersonation"><name>Key Compromise Impersonation</name>
-
-<t>Our protocols are based on the same constructions as <xref target="RFC9528"/> and <xref target="I-D.pocero-authkem-edhoc"/>. The way intermediate keys and session keys are derived does not differ. As a result, if a long-term secret key (signature and/or KEM) of a party is compromised, an attacker could impersonate the compromised party to establish new sessions with other endpoints for example. But this would not affect existing sessions with the compromised party.
-This remains true even in our hybrid scenarios where one of the two endpoints uses two long-term keys (a KEM one and a signature one).
-Note that in this case, compromising only one of the two long-term keys does not affect established sessions. Furthermore, if an attacker wants to establish a new session by impersonating the semi-compromised party, he would need to have compromised both long-term keys to complete the handshake, assuming he uses one of our hybrid protocols again.
-Finally, note that compromising an ephemeral KEM key only compromises the corresponding session.
-Thus, we have the same Key Compromise Impersonation security as in <xref target="RFC9528"/> and <xref target="I-D.pocero-authkem-edhoc"/>.</t>
 
 </section>
 <section anchor="downgrade-protection"><name>Downgrade Protection</name>
@@ -1716,7 +1686,7 @@ Thus, we have the same Key Compromise Impersonation security as in <xref target=
       <author fullname="Evangelos Haleplidis" initials="E." surname="Haleplidis">
          <organization>ISI, R.C. ATHENA</organization>
       </author>
-      <date day="24" month="October" year="2025"/>
+      <date day="2" month="March" year="2026"/>
       <abstract>
 	 <t>   This document specifies extensions to the Ephemeral Diffie-Hellman
    over COSE (EDHOC) protocol to provide resistance against quantum
@@ -1733,7 +1703,7 @@ Thus, we have the same Key Compromise Impersonation security as in <xref target=
 	 </t>
       </abstract>
    </front>
-   <seriesInfo name="Internet-Draft" value="draft-pocero-authkem-edhoc-01"/>
+   <seriesInfo name="Internet-Draft" value="draft-pocero-authkem-edhoc-02"/>
    
 </reference>
 
@@ -1752,7 +1722,7 @@ Thus, we have the same Key Compromise Impersonation security as in <xref target=
       <author fullname="Evangelos Haleplidis" initials="E." surname="Haleplidis">
          <organization>ISI, R.C. ATHENA</organization>
       </author>
-      <date day="20" month="January" year="2026"/>
+      <date day="2" month="March" year="2026"/>
       <abstract>
 	 <t>   This document specifies a more efficient variant of a Key
    Encapsulation Mechanism (KEM)-based authentication method for the
@@ -1769,7 +1739,7 @@ Thus, we have the same Key Compromise Impersonation security as in <xref target=
 	 </t>
       </abstract>
    </front>
-   <seriesInfo name="Internet-Draft" value="draft-pocero-authkem-ikr-edhoc-01"/>
+   <seriesInfo name="Internet-Draft" value="draft-pocero-authkem-ikr-edhoc-02"/>
    
 </reference>
 <reference anchor="RFC5116">
@@ -2012,336 +1982,336 @@ Thus, we have the same Key Compromise Impersonation security as in <xref target=
 </references>
 
 
-<?line 1562?>
+<?line 1532?>
 
 
 
   </back>
 
 <!-- ##markdown-source:
-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
-vNP5/+ja0hJ4dAEA
+H4sIAAAAAAAAA+192XYbR7blO74i217rCrAASCQo26JraFikrrgkWSySLlet
+Xt1iAggQWUxkojISpFiW7+q3fuqn/oF+vc/9B133S/pL+gwx5gAkJw02UINA
+ZGZkxIkzxYmzT/R6vVYe5bHYDb44TGXe+9MyTPLlPNjfe/HmWdALDpIoj8I8
+zYIwmQRHQi7SZCKyYCmj5CyQ0VkS5stM4NVHcNPL/ddftMLRKBMX2OKferqd
+Y7iTmqA7xmEuztLsajeIkmnaak3ScRLOoROTLJzmvUUIb+nF4bnoLf7eE5NZ
+Ooa/ciHz1mWanZ9l6XKxG7wavtxvyeVoHkkZpUl+tYAGDvZPngfBl0EYyxR6
+EEFnFwL+L8m/6AZfiEkEQ4nCGP84GH4P/0Cnvzg4Onn+RevLZDkfiWy3NYFX
+7Qbbj7e/7j0e9B5vtcZpIkUil3I3mELDogWDG7TOxRX0ZrLbCmB8NE765pKR
+fhgu8xm8P4JBQzeDl+Iq2H83noXJmWi1QriYZtzGdBnHTIZn8T//fQ7PBIdI
+CbgYQD/PwiT6B7WxG/zl1cHr4MfXR8GzH46Og2+2n2zD86+ieXomZPBjEl2I
+TEb5FT0p5mEU7wbjWGCTfSLuf14mURzN+9Os+OYsknmUhMGbROTibt48D4Hk
+vbFquZ9iy04HWkmazaH1C7FLTx309vpyMdfzL5cRzPxu9c/mgUU6FlnaQ3Ke
+iznzzG7tlbrHovNsxaPmKj1+9PzZk62tr3f1F/3jt4On27v6i/nxmx31I3wx
+Pz7debqrv+gfnz5+wnfiF/Pj4OvHu/qL+fHJ9re7+kurhZLk0ZHbGOjGBubH
+b57u7Oov9OOzNM8jkR2mUZKPZ+IijLcH3EYQ5GF2JvLdYJbnC7n76NEkjfrA
+EY+2Hve3Hj/+5tHTb77tgZAMtnqDx1vb273B2y39JOuVYzFeZsARwTAJ4ysZ
+ySCdBgfzRZZeiInSM4dZmqfjNFZPWqHATy9g1vy+rztauLDXD5yuq4tGiJmI
+rw7oTXWjmoVxX44jkYwFfu89frK1/fXjb55eFAbzPEpE7ywL4Z9JN1hk0UU4
+vgIGOUPRQo346qA3TueLOAqhKdBuAcg+aapA5qD+wmyycoyH/eBVOE2X2Tic
+iMK1fbj2z/+zEP8IDv/575n4R+Hys37wJo4ugDy9YTKOo6TiupFp72erZOzP
+r/vBn5f/8T+jJPqP/1Gk6BP6geh5ePyyjqSREOLdIk4z0cevxDSg55dIqUdb
+W9s73zzdGvjUPcxE73gWZsAXqCULivOnKJ8Zu3QCZNWc9f/++/86FBlxPxL9
+JAPapdPpSkKvIeZJP/gpzHNxlRTpddQPXoM+S3qv0kXlHNwljQ8PgXPqCCyA
+/UCfR+E4I+Iirz/aGgy+LRKVmRSIK0V2gUzqEFaRWhsktNR5lsK3TD9IVvtf
+RSKyaAwCmMg8W45xQuRKAh/3g6NwHoJMVojrcQyXkuiscGUIVBdJhG8vS3Gr
+1ev1gnAE7w/Heat1MgNVohkqkAsxjqYR2KD8Mg3EuxzsNfYxyFMSwf3FDMxf
+FsbBXjSF+3ovRBxDHwLQQlnw7M3xftAm3ur0kbekoHYWSi8FZNWwuTCaY5Oo
+vaKJCP7Odr4HtI1QwIH91AvBzTgDaxcrjtUtdYPLWRSLAHh8Oca5mAspwzPB
+WkO8Q0V5iYwOLcKQcnpZCP2ORczekaQO2pFPxBS0ERjI9lYnCINBT7VY6ltu
+u7JIJfTsEpiA+mqdvPMkvZT0m3H1vmMtBsRWROgWngkdbpLKMQyta6hH7DUK
+t8G9IXqD3wXtbe54mvV2Gveemh3P1N/UWK4EPxiJ/FLA2Cpoi8yMfy5zUipA
+BWSAmQgnfWaweTSZxOCYfQkjBEmYMK8X2Q3YQDIfAKvA34m4BJczF1lCBlgG
+oI1gCnGoSI6VHPimyIGW7UpE4LkHtyoJzlJoKqJeEDMxhdmHRROrBi9BGFi2
+J8FkaXoDv0zkDFyprpkxIMsoSljXwvMwNZLIZWZSdoNQBpfQbfzXWy48y64W
+eQqGcTG7CtqHf4JBjCMYcBawn9YlgkhU2CIAx7mnO0VvCD1FDxNxoDiOGB7e
+uNsiN1XNdTcYLaN4gr2Grv788ypX7ZdfoNOac3FYdXwFwpCJ9dKA785RIoDD
+xyIBS5BWPuoLBUm0IxNB+/Wr3t7xsEPD9yVD3Qvkp7vg307/usOvHjq+x7BW
+PgtzYJy/LyOaWF4mqTbxxnGIbxLQGWSnJL4KBrhW2gHmAzcGhnhlOAyZEiYL
+ZhdGYF7ITMnk00KtZY2pCAyHcgvSBOScwNKMBbJaPImB2nBzLEKZd6BLQo+J
+NHWYgWco+yioRneTopBGfzE3jeFtIxGAo3QJIpErYzEJ2pEduG55GmUyh76C
+9oVVKfqYPGNKOYOkA10cc4ADsVqgsklFJb9NZTNAOjLUJkZD45hrGBZG+uWX
+wYnI5lGSxunZlVqg04SijpLgSSZnSyA7kQSELsDlqgy+eP3j8QkugPHf4Ic3
+9P1o/08/Hhzt7+H34xfDV6/Ml5a64/jFmx9f7dlv9slnb16/3v9hjx+GXwPv
+p9YXr4d/hSvYvS/eHJ4cvPlh+OoLOylGpWZkO0foNQMJQbOicxLK1kRIWDuO
+4A945vtnh//3f2/tANv/J1jBbG9tPf3lF/XHt1vf7MAfaNX4bcS1/CdQ96oV
+LhYizEh4QYWNw0WUA3uQUpOz9DIJUI6Brl/9F6TMf90NfjcaL7Z2/qB+wAF7
+P2qaeT8Szcq/lB5mIlb8VPEaQ03v9wKl/f4O/+r9renu/Pi7P8IaARy+rW//
++AdwrlpHIGQgujQP4LgDe7N4wIRMwzks1kOlm0jkgO+kMqbg9CyA27xpYp36
+889qdYqq6Nn3b474F1zuml+OgWNx2SXVNVgf0zW0h8fkaqLloVfBKhHuI2vF
+LcMKGSYcL9Htw/gMvK58Npfm+uCXX1hQ9tBLiththb+/ZPPWJt83AVaQy5gt
+32uBhimSc9lptYbBihvgadDNSAAUTMkCngnQAqYfym6dwo19aAm86NNd0Mkg
+36NwBCSVYCBIMs/Qv+b2zdPaw8nBSktk0igBvYhmRK+o0TGcg5hkwen5KbP8
+Mod70BnCVhdhBJfaYBH68rwb4L+L885pV1msU75wGrDyBoGjNk75Pvp5sRzF
+0bhvR+HRomIwwqPV+rGgmeOXUI/1u1mAFVXIuVNjkZLHMc6dcUhJnSX1SsvH
+XnE445zuCJVXkoPOdwa1J4qDmiBVQbPyoCbi+oNSPTCDkmqG+Krthulf15vA
+8lholO1QynQchUo29bMd9pkWuDKKxmC3oylIA3yjNr9PR+hv86u76oKlLbkF
+PAV4NwU1cjIYQGvwbifeLTggeDO0icNPC+2Uye8QPHhBXhK6BiDUCT8R4zI7
+wyapX9wo2mi5HEnSDTlo8QysJrrJ9A7g+cKL2IVFT8XpvfGt3Dkn2d+DpRmo
+fgpKkz+Gkl76MWjvHXfAy0O3vZGU7x1/RCFH35KknL54Yq4uleRc3VkWdBgI
+UqFiGA36DQ/S1oDD/6YDLADaGzydV8i59ZFP5antz59hITW9qpDN5j1y1Ywe
+etfvjuqg1wdfLk+3TlG4iA/NXbg2DuOIfVTH3+VHTx+fBim60ZeRFA0Fde9Y
+Md41xZXWa/Uii9HFHBcx3CjfaSkAKzhB/n5pvaIfxx6icJIYX9Cc0Jto+Mit
+aZE2ajmhX7GkNY7fOZTKoGL3qVl8ApebvM3UO3h51CFr/zrNkSq0cD9oskTE
+FjmOBfSYpAtak3AvwGvM0hAYCycXZwe9eVm96IszcKKunF5GuPPk0MVZR9Ia
+coGjVh6+WTmxNhMmXkCTiguiMXstU399iUtmCguYjnSpB3qpH6fJWQ9FxuWH
+cn9wWjFccSEqNDnY3bdHHSd6Ilj7dJkTwOpjAIBWYf7aSc17PzjIFeMsJfFd
+EIE0GfJMYNEyRkXPDIxhAvzDWUQHs2guRTxFBYdhNnLuK1bO2KwdsaOFeHzc
+z4r+vXQoZgj5wHaxW3hZkVy8rCtT7UBTDfcHlnwzdoeeZWOAkj5ZxtCJY7UG
+x5sUTcVEt61FCBYvyF4RxQYNreAWGNHcJ6taV5rxqOUxvn9uRAQ8/FlEKi4r
+r0DJaQLXPmIl4ESaKoJr9eEVDOzq+AWKlgnQYqO8LjevXC+trOgVHQoi6O1S
+Q+MeD7FkTaLpVNAw58bZDzD0t8RWpd618SO4wMEJRxnG4Ahm1VFNsEgYHKsM
+iJLvBU0jmc1Y/c5f4tNsAIwC7avQo1FDHDUxK7FpimTAV4zAREyjfBd/ZqOU
+pEEi2FOkngPFroysVsloInOKzjiBQlikZxNr0PwOj8MYqcGW+/XwmYkXInv2
+gx8XFAcai+iizNUVDTvaCDgC6KnklYLOPlX9fqgZW8qlCbjPwwQsJlAP7YFr
+IWwIDD1KDAOxU1h9D69qF2xKiIc54EskDkEpnc16sbgQ3p0oCDjNXpM3iBKu
+Cg7CyP7NfMBNOghu8TlqBRj7vvEHHoYuvKfvr/dPXrzZ6wbHPx6c7B+/PdDr
+zrdg0PTa7e0RrPDx0v5w7+0WPfYeGnjYu8XnD6YHlR/FaOptVZ/3qxtY/+EG
+1AhptLBabr/c/+vxydH+8PXbbRw0jPxg7+2zo/09/Aoygz8jGbY71MDvbkOD
+h81osH3fNHA/QxhcWw8Zpvz44F9/GJ78eLT/dsADH3SKDXwIPhh8SBq4H6IH
+jnunU3cL80Fw8/805IOdFUNwlEvreXSG6mhr19do7QPSVd3gCJm+YxyUKRgk
+VrygVp9TUgrlRujFCX4/NfJ4CotvWaXB7ZZpyVQFbed5LwSn1+KshU5BM/2B
+4rtqe5iCk05YEr0oNK4JBZ1x15vvvNL2yvez4f2wRpgUzXaI0XYwsmC6v+PX
+a+XHHYhyL36Au84ZaHNy7chftrGEQC4XizRDAzm6qvBtOMeHI+O1o1KdeIbv
+b9OSNpYpPgA/HZ1q/4m8DY6JSwzDiKxDvcWXPkvBetLOZ3BAziS8Be4az8B/
+S8o9az/Tfu6o6JS36Z2dBt0lW+B2mH7Zhv7SlwGvzun7TtUgzBj+EOy/o02Y
+mDIdgLKcvBbshXnY9TdvYC0RLyfcJYenuvaPbfePgepfuuDtqfiqYy/uqFjB
+debI2sZTQ3y7U1yIjuogQJk3nNbQunJbI1ioTvQC3M6IXR35zZecO17oSYw8
+YpNOMBX/NB5oKSxs2ZlCfudCLEzgSbUFwqKa7/K0AY0Pj16+HYhtHRTi4ITz
+QrWYMQMxKsbZF/CmcLpG9WyD6nnD1EEn1bhuJXVTXPvxRRWTNPTJYSlxTnoA
+/XWfyuVocJmieice31URlrZUDdoqAuXHpRdMhmAaRrirhcprBJpEdmzglW4R
+E1m7yrGOL02viNVWotanXUe1dZWGMVK5ddrHBDmUCj0Wj7+1O1uxkeCG8TBi
+q1mPlgxGHMpRc79he2cpdE43quWvs16DAY5xwQz/q1R5rDFXybElru60NkEn
+L8DR+n3wou16hC/ahkM7ndPv1K3I+tsCbqZJeAvqCwOEbWyhG3DnO9j7oVKN
+XTWBTj/sVpNxN017L/eet/kV3eBxN+BmF3GINu9d/jYWyVk+w96w7Rq+OiFB
+rHx+Sz8/C+XMPIqy+AzGT7l7IAHezl9uZtQkl1hhR/M7TydM2lCq9awMdh3S
+eJ3RxDHdJAoddcqzm6SXjhIjV1tFeKUU81GMvx6+Gh78cLL/lxO4ZnwHvLM0
+eH5VhQ/P5CBb1YVl51gRBRx6TVHnJdBse+UiAIdxnLoxJe3zVHg5rhBo61Ep
+Lukop5xVFmtXKrWvcHD4Yv/I9NHt8V/eHAUOV52u1LvbDfTugPVuSef64y2Y
+I1ejLPSgOWqpI5KNVEAwLMaPJ9HEVzokuaddLZZKw3kkQKHHVyOLgRbmVCfO
+DMmzSFyIYLc47R6FK2h6YszHqeGN06JNppB7pBRjMeheZ9grgr1MxcU5vcKJ
+6kpH/NW4HbNs7VOZuKAlZ+42RcgRppEA60LbL6oTOvELtVnOKSCUBFOM6EAL
+o1iUIngF51LnA6HgnUO3cJkyo9hXHsbn1NtUxZ0m/BrMfUsXghND4R74Fwzk
+c9q4CXOPEUjLVvAK/oTBLqVS+sHBFF184PnxzA3NYYqS8i3A2ZyoWDknYS1E
+VghwF0I9/eCN3jOyphx3j3KO7F0Gy0Upvlsilwqa94OTNJikAVqOGifPjyVq
+w+/YsgHZMlZ2Dmc7mszou5d0c5X6HJC6HGAc6Kpodw7+XPvYjn4suig+hXNQ
+99jXtnMHugVaSnh6ekA698BPci3my61OegX/Aahc8lBLET1NTicGAl1X2616
+Cxf72q7rNw2XN3k1JTqgTv2dXvTKVD6EsxWit0GdHXI1SHd/4Fiw5na0F/Zx
+TQSnpKhYJXoGduCsGTAIomPB3oohSMSZTnDAJZnxNldanSqL4lws7d24mh4v
+I8cqRUhseKol3w6IJB9v0OpeekazNDgbunaXQ4Rh8GjCGsexYszRp7huo6zK
+aKL2kZ3t1hJDmR3yttrZvi4TebNa5KjFGo4qWRrLUKgbyVaR4RoX1ocmE2Sr
+OEUrVKTTeLWKZD55Y5bojkPSNd4IG2u9NeGs4UEVTItaH6Z8Ijh2EyA6Byax
+lAZLE+ktBNbr1B2tUweuTh04asvRqTs1Wu5bmt2dOp1a99hT/ZijU4F4Pxob
+XyujzLJlAac3UXTGWcDzNmVh3tBPV4k/nizusCzSP9j101Uit+MuuVfLXUsz
+xTN6m/FiBCFHeVmOlEmX+SmZ2EkqZPKAbDp2ktfbvKm2igNwTz+5UrnTo1Tp
+Az+CV04DoGCgExIxe8SmT7jauiBnyOy4KeainsCCKOHNJ1qVXZPBgDo/seoC
+b0oxqevrGeZxOQAuXPEIeWnhLtegxzU8943mOW/xiMoGY3lKwfBu88Sdna6h
+XCEeq2Me8ChiWEFdjGfofk+UGqD8zT271X6sttqtvZdqzX+J3uMcoar/qNyk
+R3VE3yQTSgdO81mWLs9mOGbXX/C25/6tZSPra/c2Hjo3v0d36/crIgjvK1qu
+fcNDP8bvOHGtoPi57gaIs23zUPXlofO99qvz90PevuKF2ntYzr5XS336zmsx
+9fMC2IG+Omso+hvWVRU9KfSq4mtVT1aNtgGh3t++iYuGTTzUQ7E/mAH1Go+F
+mM3ty3t3ydp0OPjCmr70VvbFmRFusf5WywGNW13Z+9Vjq7v60EhbqXU15vdm
+LV1q4713Y1Ubho9r5KlGorQMHVVKEPWlIEO0ii29rfjm+rfVE24VVV39M7hF
+K4ZW6xuo0j7qjzUSb273dM/bwSNcLNAf6Hs070VR8zTrxfvaP5yfb9vASp2z
+qgHP/Nx4HK7OGdx4ME11TrGVdXfaCevVf9a+DxXt4PdrYinN+7Lqs7ovTQhT
+FvnCuxsJTlHfsNA4S84P0Jfm3FT+OIucT1FXmdXrH2t11Q7qqp2NrqLP3euq
+nV+xrtr5/Zol5AfqS/OxX/POCja/vjugVr5r/GS/Bf+NznpRZVxtr8m4qksk
+py3ES6FwVO6q1uY+OzuysnI72Vu+qh1q+qzcpsbA0833oPFpu/8cNN+B/k71
+UT23drcY7+d9Xn9Mpd1eTNzHDhb3dkvT3Kb4r7kdd/zqN4qZTE4SYvPtEnyS
+tkpWPlmxY6KHPFj54Nd2yMVtkmrO9seNewXVYWc1ZJtz2DyaqYa8s/rJioCm
+5gqMztQ/WBmV6nsZkBRLGtoaBVjZKORaGZLywiciD6M4MDneVKLDpM9QxIhF
+L5hm6XxV5o0JYHtpYJQkSW+lbfyoKaiJEypFXe0Rm+DTftc9+2/vOmrTt30F
+f13htk5IO6oZbmPCy8ece4ZPur1T0b9hzqlRxc0gF9/nPVdGKdsscc5PgA4V
+sqIYYtk+73gZURrRrGC+ZfRkhyPiVXkHoi7fzuySc66BvylQCU72kty5+2Zb
+aGXakxIjxiy6+Rlcj0hPlMlj0MHSmnwHlVWHGamUj6OQSqENpnq5I6XGfIxy
+l9sppX0SIEjlO6zoTFPKuy/0X2RS7ZqkeBR2BcqpdA9WkV06yWoujTpGLgtl
+yRB42Wo9V8hPJ1+lIlyNTEWlJEaE8WFMn95GK4N5UYOaDThgJZv/qUFFFnN8
+fYHo2147+xFNe10tvUdGdo+q+3sbCTYz8NJzexru3Xv+QDBNE477R7IoJFg8
+htG0BNG8DK9Yf8s4OpshRrG5Im+e3GfSt2QY5wGXDAFycyqS2f04ePnaXmsi
+C9+1rplEV9cPJyvIYDWZXhMmhE6W6tZ39gGzzoPK7KE+JhAmYMwSzj4wO1+5
+g2bjRMGxclrHTsLhWoNqyk8Su7BTDKrwEg0bbmBZ060xvhqvSIqvCSixCSDY
+2g8N0uwHbxgRyHm3Tj2z2dUoiyY6eV0XNXM5+1pdpIlR4DiGMWwRqJGw6Vwb
+qFvrH4SuB0A6E6HIzmTXZMYQUUo14bAyEkENeUuda1wNQRjniH1A1Khep4yF
+NaAGNQkPrR3smJlJlrO5LRRMgwgUKlOrD8q6wBqenJNKiQLozwHHxUDsTPOb
+ruipiCp1tRqk6kSohK9aylxEoQ/24w1EDxbZD2AdBz8C68dclDGh9O2CRac+
+rsVge3DhEgS7T8mzJaixTKER3senFCdLGOgbAbELaTKpQEnNSYrQRug6TzLK
+l2FuygdaOQCn2wWqapuBtCmpiQObWUCtVJdSwWyhoGI07OVkYpoCuf2pdHFH
+dh5bJpu9NDNkpOJ5CuR9wCQch/ED3Zx/q5oMX/Qc9XQAtkWIuXTYH9oBIgo2
+PIywzoUDji+aaOgNFqhGZUgSh5cyxrcEXK5EF2uzIqvTGOyANKql3zoSZ8DY
+2u+u2URXmd2UzskaAmuRZZ5edrFW7XASLmwOOAyQFXk3IEROpHN1jPWgFM1z
+KgiWBuF4nC5VnqhXNkEXmmAqj20lQvBS5ugFQ8MMTlqrNNrE3leUuRljXoEf
+YNG1B3yWV6UsrSQD+86oyEWYeP4S6LifBCOWJpEcL6W0Xg4ld09MisEUp0Zk
+pSpphKNnzBOKpkwpB4IhySEYgVwo6kcSriAtBWLGtTpBS0hC8y9ckL3gyuL9
+5TocpYoaaK+UaEGXQ1WE0qD7TR3OLkP0kYuoZIWqHjCpKlKp0Ch11RmdcpWs
+shEFT6UDrVuGWGyTUFQqH+gzZX3NRIyd5QiWx15rD6+g6a1jqaT5sS5GgOOc
+L3NUJgUJRXVvWUQbc8qgAQbKJCWmG3Net7433gbbYuzkOA6lRO3jFOpkm+lJ
+iaWoc5tUFQ+4GiWbkbWhAqdAZRyBdHKRSqXCwN8BztOp25SUrWhW3Zk2rB0T
+zq9CI0H1E4yNG5HNBxezQ9ZJFeXVCmdCOjIIwVEYs1pw+KpUpNKV3ekSruJg
+kGha25cqZGJmOtdMhglpz9JLgRWoCjVb7JSSVCJBgBWh43MyMi4vYu2Fdwss
+e3EBbPy3JZgOop/2f05mMJ0SDKDS+CrlkavgZFcqmT1cLLjwiRQFd1h7wUr5
+sNJH9pRYOJ3Kj5j6niiysAA4Vw4w+XWNp74Q/FHlP43ldyaEzapHYlVM4wWT
+kwogQRculdFjdZ8b/WewoLqPNvt0PXti+DIJz8j3lFfzOYYqKLAjjZVRSYja
+48ZiV9BOkeaaDaoWx+XBdamaNeaiEUrAWyWFpdo0/da15B5odZZyWwPs2g4W
+ZX1Swe/EK5wMZx2IStXUb70QVKbZToMq3I6lX8x+wQKsGq9VZBovOcFSVUEG
+GjAjj8KYamC7a5VVQmlLtLmbEQsu5s6rGrJfGr2hIF5Y+Bzcvpi9MIMZA48U
+wdNSuU2rnO8GpTZshWpaJZHMcGLnpRJ2clkRzD0CE8QDK/hU7WkxLLQG0IJW
+Imd4CaFPmjIGqg9o+CKNJtzT+j4plNIyS1hjgJ6gIWn7DWud1JRrcWAuJkyy
+Co8j4mhONaTRMKlUVZrTVNk6dHKkLqKrTRgIfGlCjO110T6TyZqGNdAFaVBc
+aHBdGqsqMOSEroScpct4QqprJDTEPYMepnPljxovja0bsy0/PEc1Tsa/PM+8
+LtAp+5zN2vFTo00spW0K43S0L+SvXnh95pbeUVXYIlBsEwRMoLfvvtGMfBff
+pAO10q8QZchsC/O4jOLhzWxNIlpdgVLMS0ZTr5QfLBNVdfyBXXE4E2dAoBjk
+IVObAn3QbbClwKgEkMrXf+SXEfIXWG2qKkbxIdTDdayvQunjVNVh8PgoVOYa
+7DOaXa5QzenIbIkVTE0PkAnyj2JdZ9MlrSRMaWjyzpF11CkorBoQ/aoe4fIF
+fd5NGlNxXobHYY7zhFyMckE8U3vCk0rHRautIeQU6Md2ZtobVZW0jS0oN4yR
+H6UTtU+mk/mxNF53vdpv6oxTNr+genvEqE/I5HFF3+cU28A37jr0ICHvOqPV
+NKALaquOCxWDtGuxxarZF2GMSkFbcSdG5gveZbHEVwVBV1Z1L9SY1Jnqh+Wy
+VHdX4Ak/ty3yhJ+eU+hJfVbXeypUeVKfWxf5wc+aQj9NSj7dQbEf08i16j4p
+tLhNgNvu3Lr4EyeRNKRJfQmou6SJ/dPW/bpOPagPyyf1JaHuhyalT4PSUHdQ
+HKpBgagmJaJqikQNbMoScDyFmSS88MgJO1mT51SKsvrPK7m3KSK1KSK1KSL1
+YYpIfbyCSvdelwj3fENTpDcXi02BorsvUPTd7UsQVdbwWVOuZ011HTfrEviT
+KMGhAG/1VS7NsF1RmgHaa3uAjTWFGI6uV4jBLYCLOoC3H6uw1ttDHKvXFdeZ
+PHWHaLlSD7K+2s+wstxPTUUixVUfqCwR9uSrrw7MHilukO5+9VUQ0wEQAZ3A
+ScFtFfvTYR6khCgbla4f2ilswDkVkM0teumOGbIYMRohZHj0N3VKH+9D6d0J
+N8KN27vZhU6GwMBQHC/xGEMVP7PhTBPuUycRbcosXa/M0vCu6iwxYxYl11pR
+ubqmkne+BiU32dRY2jIX4/PqGk7OwQmFF9SX+liplAp6oW/KWzSryGFJcpui
+RUMpl3OqgQFvvcpxoys4w/0iPEzQrTWAvkrNEUJVVtlGWuwkcS6n3vg3SgUm
+pTxl/gitZ8RbEksUScrqPbKFq42NqiyBRZ4kmxjaMAK7jIkMehugtgqesT43
+qL333U0q5dkyUhROxd2AYu2WJsWkiq7QTSpIDX8VJaRarbW+K0USE1XA3xP2
+TV2oW9SFOqnKzTIOL5lT65p4JZuKVXPvscYUmTJakPI22mxdjdeKw0xoIefM
+UqGSrNafFYsQMnCpsmrMetUpuI69NfWobOqvX6T3QxXNatUWzTKHT6yumVXa
+v/qVVc3yqibWmelSDSZrqX3G3ZTR2pTRupMyWi/oiJQz0Di0BvqsS2qtD0zd
+uOgWpu6uKLr1+ZTaGtqjKWtwyZVVt3T6qp6hiudsloG4iNKlJOyJPm3WRAZV
++n7xYBz9uffCWzUvKJRm8upuDcuQ2rpaCfWbME0Lb60pd/W5Fd6qv+f2TTQt
+vFX63KjwVvnKTQpv3a4v7uWHhVkpN+AUtvqdrYJQbONhqY3a96+oBXXjSnTX
+q5tl/3h4gxpalbWgmtXT2tRXqWtlUwtqUwvqnvqyqQW1qQWlPptaUE3ft6kF
+VfH5YLWgdpokVt1lQSi72votFIPaFGP6bIoxfRK1mJxYhCrL5OQerkfSefUU
+KioqWcyRzWBEmEyanWMdqJARElIFUEpRkU2xGuj1btDe6nzUijXBV1+BSfjq
+q6C93WlEwyNLw5ru3I6Gt6ifQ1kPfq6GPcQtJNyN2l3SweTqiju7m7I4d1EW
+Z+ZE100g/XYlcgo1clazxCUmN4ArQZuZJbQlFvVQZdHgSYfvObeFealOczCl
+VJvFQiF5kCaErW3aeEGkENbFmczFFpR+kDW6gQDakqmco75eJqzscWuC6jKw
+c+UgUAm7iuj+LuOrMnEWScxLQcwjJqQe8h4gyuNBMs1CCyZuH7486HQ1ekxS
+X2nnTCcf8VbIFZ5k1vZhrIgm15nNtHewXExwdwPevozDLL7ijSOnwo6qf+Mi
+3yvoz5i1MTMTlndxuuCmy4G2CYYv9/ut54x4zsV4llCBAkbQQecR3lSVke9k
+Gxt58bf23SRqVQDAt+WpW7hpDWoWCHGJRQr+RlvVmhxsnMHSwuigfRxX5pVD
+0TA2rA8Dvcf6MCSAIBK0p8QMmoDy1xneYAEKKFxnp7QfHFNGHraT2tIapTtB
+4aFjR3lpWFnEekB2/t301VNKlHB3G06D9khVv6GNQBhQx0MqqgIeVEfEABXT
+aVCJUzTFcRSy3S+8UZjrJjt3hTJH5b05/9C9RO2DFzMvCJKLJIE+mW3Ecp0q
+us2cqUVZAwaR17D8TYiJBtaJRM3OYkeFbrgqilssoro2jarBQF4qVSUyyjqx
+RQUeSAtIRB+XEK/Ebbbeige719hUW//CRd+Ow0U4iuIIkZ6WOOW6LKp2GjNo
+CWzpYStd0KUFW2ImSZQAmVmbZGmsUP/XQ2FuN0ZhViAsq/CYJKNF4OYGinnD
+zwaKWf58slBM+hRRmCrHyU1nKjfy24Bi6iJy3bV4zA/LJ9eGYj7xI4ZunBDj
+hvcKxcSMZ/YpOThRStPYADI3gMwNIHMDyNwAMj91QOaBk05ZhQcpJaZ2TdlK
+o+tlNI8o9qBv9r372uT50KtAZdYapmKUnyBfBWVwoJjGitC5H1WEqHAPHfho
+4QQQHUVcjxhd2Sb1poDcuAcYrNPLIhpWZwVX4mHroaIlcF2r5YJWOW/Zj14Y
+OEYB2Vmqtt9vHadAkzSYhsBO4h3qroLAoha1S2gHWMZ7JFRasaIghGa58h7P
+BmfZGGd5vzDLeoSEi7Z00ZWq+65SNUoDqyOjh3aZsB0n8CWjK+4Ie3ld8f4c
+IJn+i26N8WsK8UMlfG2AHz5UBe9jLZr4gACXVCQnKN5yFazN3Tb3bVBz2J6X
+LOOD9Pp3h9ILVEi2BlgyKNQMKKz3bwnDuwUO706A/Y5qdffG7hXkvxIuuN5y
+7NwKUqgQeA4A7z6wdkMG27ma2lD6QaXzZbQ2d0fSCQY3AeLVCk2Bb2+uQO8S
+L1eFUizcicvfM5GvoqK/NrRLBapGu3Yp5B2g4ByY4ByMgHkUWn+jRHm+wnoQ
+07AKVEe74DtiUI1af1KJRHK24L0nvS14vELLmdUAPr7t2gA+fuzjAfiwPn6K
+DqspfqKmSE86uNKRnKmJH77cR1U39qB35Gz7wLZ18DAedTU8bKUvTJjO4mke
+yiMoniRhgHz9gCsN6OLB64/uKJEpaGOkLUxUgV52hAPeyHSruhc2d2IR6uNf
+TLXbUokDoxI9w4Xrr594w94WnY0wnFaMmNS4SJUnl6w7lswLaVApfhNUUfkI
+FEpx+GRIFXKtFDuLhwYw0JuiQIM3SPEZbnYrb1r5nOg5Bly5O0GkIFW4sFJx
+ajpp6hrpzppCwGHFamaDL1TP1zRbwlU5fvcGX1jRkxWfDb7wJn3pre9Lk5fc
+DtKjby3Ci7YL8KJmA75tX9a+5PaQLWzl9vAxry83hmR4fNKco0rM5XqaN2/l
+Ot24OazJPLAWCHq/vVivcG6tsW6tr9aDq5rqq9XowDvrSxHL7KuDajw0etZ3
+jocuYQw/Ih76oNJ407BLeOgKjOEGD73BGP6KMYafLHLw6yZ5QL865CDv8vqv
+Kuz1apxccWe3QHwfVEebXytqDK8DE9ZtcayDEtbschiQJEXRqh+rjMBpOJ56
+bm0Abh1isD4Itw4xWBuHW4cYXBHK2iAGPy5isBH2ziYo1wAGPyj27pPDL/5K
+EYMotZ8zYrDZdsVKxCCT4D4QgwcfDDH4k04Z0cdU66QvPA/MpP06J4LVwGj8
+w9Vrzlave5agKupAbSTXdhnJaGB7ME1LCjuHwTzKsjQrc28xV1nFjvE4OHMo
+X2LPl8TBRnNRiYX0cYs3hit6WEgfX3kDLGRBxV0HC+np6r5RZoT2U8cidpkk
+NQjJ1lo8oDkezs1xdRPISIXY7ai7AAC6RSrzOwYD6gMJFUxrGk2rSlzaET0p
+QQHrsY/XQQIOikjAQQ0SMFQ5gJdqGwbnzdQuL0uHPTS0q/YwXfRh53MEFg58
+YKEWemTyC6EUZxFDWAc1LCASK6GG9blJpa1itZOMWberN1A/bfjiNqZ2Nj4A
+UjWOx8ZTm6tP+HbOiGSCkWBjE8rT+BBYyROS2SJUEh+rPpQS3Apth7YMZNLd
+tFwBixxowEQkNYibC+WCVphdjbJoEuZVBo6sMmHWtWyi7ruAtX2Y5EYu9YYn
+3gd2IcuVZtN75owggGkmeHsmimJYdeJyQ3gm3a2MG61tXqOuUhn1Y9YO1Efu
+gyYg+bHnUUIpxkwAM9Gha9abmQfqmGJj172VBuptWgpH6YU6seW+4aO3B4/2
+StDRGyBH7wAQuA4O2AA1egdgQKeJ6wNHO6aJWwIB18EAG6BF75YWwapDO1fA
+RW/PF03ZYgVI9M5JoT9V4FCV5F3GiH5AtlgBDq3Ehn6zOiZM4IoNMnSDDN0g
+QzfI0NkGGbpBhtYgQ70ocCHdvez/u8nCxfVbPzgmpICJit79sZ8fCOh4LZzj
+Bnz4aYEPCyq4+phHhTu8LTrjyGcIfQJXfo3Tj252YOA1qx9+d1fwvjs/wa8Z
+xI/BFB8Z53c/MD+JcKLrYPwIAqv0oEbRr0S5rIL8UVGuxpg/w+blw30JA/gR
+sXSb4/nuDzKoFab28+zheDc/o+/zggZarf6ZwvhYAX+eQD7fS0fRSWj9UjAU
+/YC3NAuk9CuQrK4gwt2oriGyw5Zlp1hD5PZIQz8GtYEcbiCHG8hhGXJY2lq1
+U+dxeLlqCHtMtF8ZacnR25ssDhNZ2F/Hmr5gdqora2gRsvhHuQFAbgCQGwBk
+oyY+DwBkU8TQ9U9QXIcGuhmssNjKzWCFdX1Z2ae1fTG/N76x9MsqVGHzVmw3
+GsGp6n//DI6X3KAK76UvHwZVWGLxmyEAr4/6Y7h1Y9Ysva0Z4UoXV9L8Uz+u
+0f1UIsI2xzV6nw2Usun7NlDKu4dSfrs+baYeSDmUnCZISa1NsJSbcxfv5dzF
+VXDJFZHOzwQwuQr3aiKUDZGvDbGvOri5AWxuAJsbwOZHOmvyDrGa7kbirwe3
++cmf9PhBEaZql/jTxpgWsZwE5dQwFWhlFCVCUjax9spq61v4WYlqR5jkoRK7
+4sF1vM0DLazwmq4qdsEY0bVgQ9qKDCcX0Hncs9IwG5g9TF7FBFVz8iLYAWo3
+u4DxVXYEe34RhQ6kRkbzBVmM8+I+P26CIdIIdzT0xlTfsa+MprGz1RgrZ3UL
+z8m9Hwt6I7Sq5vJKZG41gnbdWaCY+RbGmQgnxjdYg379FMGvw98e7pVgr1FT
+3KsFfBH3VKO+qsCvoNL8nvwa0LAF5b7Bwd4GBzvY4GBrcbDblThYldLsoVRX
+o2PtCssmjzSSkMYHizKfzMNzIf2lHNym8KfYT1CwVRBS6zrYBd6HwZBujiCt
+/GyOIL1Pmtg/bwQs3RxBWtPIJ3wE6dP18fJ/ufZBpBu06QZtukGbbtCmG7Tp
+bxltWjpdqQw3dcMnNljtOPAac3r3UFOGjlUCTRucF+pkJ66FkR1dD0bmHAw4
+dECs1fiC7QKarOCknq7Hzg4rwLNUUthZ0WkCKV4sWVtXYLQWqxQtXt0Co1t4
+g5LgMuJseyXirCH09jeGvB3eL/TW2iJZg7tdMPDWx5Hh1skwZzvCJECAADd+
+V0d8eiLwyZ3laRFEaNKFa5+cV1cYLxvGsbMQJcA/JqrlwJ0r5sQfgnUgKNKh
+NmulDp3jgs8gsqp2wNjdYvWJOx9ovDAYpysQOpFPBnrobazbgaGvu0OIc5xz
+nP+S+oUzWsb51JyW3Q9OUozdy7TsL9zkZNXhR8NeA+Uq7eZKXHXXAVZ7hyV+
+ahjrE4KV3wIeXYfZKyO0CwDtIgi337rm2arrcNabQ0srTc46nPJv5SDTFxus
+8ubQ0TtGAPOkbBDAGwTw5tDRXyXm1vVIN5jbip6s+Gwwt/fUlw0kdwPJdadr
+A8ld99lAcpvoiM1Bn5uDPqsb2KBTm75vg079KOhU/Ds5W3XcZwuPRNpAVDcQ
+1c2ZnhuI6AYiescQ0UY0vFec6LVp+LmcMLpBrZb7sUGtfgKoVToqNeVUUJAO
+SnGQws1pll2NMqFoPyKGNMyFE1Fvg3UtPFKdfW16X4bMNESVca5sFVK2fNJb
+prBwI+GA0V4Pn0lTf5PklzFoBFDjoP2vAXB6q6Ngm3bnvtGqtNlVwmdunZrD
+fJfJGPTsGWcpk7Qk1z2WtUtbfJ8YMlVl9/H8Ort33gEgPlbXolYDESKqcD1y
+VTfhYVkLmeV+Zh4/UIK78sGJiCFjg2kWUv4mmSOFKmXdSKI5YXK+iDntQXG1
+u4/q7+nhpmV0NstFZhInItZchT1bF87cDB+LetNQ/KMiZCtVlQeXbfSmCuSs
+LYp/1RQgi5llF8jxJ1xQIE4vK2oArKiBbEzuJe5AqzT96ELvLBdSWqmD0ZhL
+KIQmP8+xBVWtePKCCVYhbdJfzq6UaLokr7IDkbfxz0fwTC07yQ3g9yMCflFP
+snP/DDO4J7hG4LV4yzlmlj2t4CxOR6j79COukJOeiAzKHixe0I6mwBWYGxJm
+V0QZ1Ql3RSCZCltIhSdBOB6nihNoUtBekvQgHooAPSEmFCiWmqTjJa7IO5RJ
+TB46nyFLChsM2QT8yXOhZBqukVKRu+T80iiEk1nAIiOlXvoZT/M7//6iPEIf
+gTdyWF45K0uGx/jLnjrQQz7L0uXZTKsoD3WkNHm8+pRetwVrmeDtyIg+jAm1
+HaubBVwP+RBiGc2jOMyY6KEDyfZQcQbptuUMVCmZmpGCHBUW1fC2syVOYy44
+eIJQGNvnm4+9vh0c8g8pTRbqrkJoxvqkxZ47rUmHXciAMlXLWrbvJn2aV8Dz
+cBn7TLksYDOiLEuxkcI6uURNLb6VkENZTlKqAMXjCcywokA16jIoq2N33qKq
+yRKJXGaijOED+gCvdgPKl3GpveMu9JzsTccm0jMqS67Mni3HMzDSNPX6uo6n
+iu/2yhe4fZFKN5R7ZE0f5+V5kBfXp4P+vgHdp8oGaKkCxmzz6g+VmVswgTlq
+mhbLAnVUHjnzQZ4txy7gocYoYk9LkkpZ0JhFR1qzbnEdJaXdhDyjiK1IjP/A
+el71AW83ZugS69gkPVSeoL8jXB6gFkRfsy36Z33wfKaFoImOmhlel/r0b6eV
+juIeTLWfw9PvcpwaWkC5/QP6XYLP0HNs0aTIFrYfYSGPnOdAEQK7VOgDl8J4
+zu9AEwke0VWrNXRfiz8FYZ6H43PKl17GE6cNGmHVS8myqKUi+UmPtCK1i0Kn
+Yyqd75QR0fZMc2PMgFwms49nAB2BzNxAi1fsVywIfGqVkqI/c4seCAjHWRqS
+xlLrd2c8ldaR5BWNXWJUrHkMeb+GCBKst+BlbOktlu0WGFdRr5U2z7qaViVl
+aHMhsbBPEQfjnvTVnoiFyphP9V6AKigUOvq4U2AUFTY2TBAmFoNlcztVH6VO
+7sSecRQueJFeCrXKg5bPk/QyFhNOi4Xl+HI6jcYRJSSmnKPqkJ2tOPx3JMYh
+9LbrgG2p45VGvK1KjqG5B0ukXF90+JPccd1W+bhEkcobovNM39TpOpma0Ekv
+JojBtAJpfJ3QVetZvSTwdUgVqi5EnbyMczqRDYZTzBbtmlmCpQvJKqkUs070
+WXDl+zg/2Vh/I0RLkEVyPA1C+sJ1c+EK8oUsqpWg/fy4g/ddRBM3Gra6D07A
+xrKjKuFzoFOY8eWc3NpqmZoMWzgd4MmEKiRRWgOtDfc409x3Q7MkfPrdh+bd
+CuKQX3U10S7DK1VjAWGjZOpQlha2i8ac2/o81ASvkNCzDoHuF8KZ1fJylkwC
+WemK2xyU/AHcrWVZhnN9t0avl4WIt/wKTfP6ncVUU6OYTG4hgS0b4OGsdJSJ
+KGEUD+VQj3CrVTWAVpV8Me2gmEVwwTFJE2QtqfQJ+26yclIKhHxUSSjT30fO
+bqPPqla9k1JHb9PX6cCVRsthsChkdabiOzDGMJhEEqUVg47oVnmBQWfy+8FP
+5JMl58g9c4xVYSgamFVGo1iw5C+LVuQMZxTe5SyGfv75WZoDUbND7AS4Uhdh
+vD3A1Ts9r+55dUAzrxQexRj0JbpwePwSruFQgCCVnN9vfb/MA51k7nRHCjGX
+FBxFa030oPa1GBpJuI4sBpOlkWMHgqJz2nUYxq3b0MdFvlyenQmJ80BBVrXI
+N8tDFhhnGrqa4uANhgRhw74dHg5f7qNCaJ2kKpbGqH1qdBwjm2FEeiIQqaIR
+aKvVhVWe2xweOBdiQTsTvFy1XjJIqsqf0ZHLBMsE5qY8n+WhA3gx7mVgLJol
+Rbhi1nBFlSBDm8WPic8iTAe0myOq3CMKvK8R2mLQF9elWPrGLlbAGwY2ckp9
+GC+Q+lRav5iQq9m/QRyMLkGpCqRQGEx9oTbf8RZAN9D1FSOnvOLqah5YLb8Q
+wXEnfKXolSbbVBxcbVWubxLU/U1Mg6u50LuTOca6iQ2L5YnIc6IgSaR3GrIr
+qx58M0axPRY32pePgTlAMWCGiO6G9JwHPoZOGfi99DI5w8CgQw9ehdonlO03
+o52YZ7R10x4MKiS0yFqGHJjUeJZivJiChhxwsOcQg96IcrZLbr0c5hQbjYRn
+QWFRNPPkBT9PGw3JOXteNUWFdBBPLznaioVJqZi1jZXbTsEL1DU/zQiraFZn
+4PtcCRE8EN7qDV6EchZ8H9ECgXIcUpfWXYzS6lsx80ltdjnOjXpTcZF+ZbeY
+dG4RKQnDV1aCmQHw34rRq8bwpeTWRslFGl84E+JD8LUzzntPaLzFJAJtIyQb
+caysqjYcbRs1EQikPPu+cXQutBbOsTvKUXDcUMON4BiMmJyGHdvMdo4qxuFY
+RmH3InG27rCOMvBUx46jp9mFsrOuim2HCRCclJuqKGM0MGq/vwmaKVPQjFYq
+CdsKE6tIqDQFBR7lciTF35doArAXfYqg8w8YuwLfiDk4R2XBVsUJSZPZwfJi
+boRlwVDKgBNouPoPb8fDG5TwryhjRYfKdjgCufY22pnyVMZIoMhIf3l4qfZ7
+Jrg0qPSGa5eDZlv4xPgdVLO4omSyv/W6fQoqJAPtibjCNgU1KG5qDFxHb29q
+d/MK1kYegFotj3WJTwEyleYmAHuxjFHrGqfRY5ZK754HQWke1WMYFMawc2pU
+MM4sjoRnUkTEURjoB7ZzkyysiBdgxJ6EVc0Bb3I/sXP5gF44wcmmrUrMs8lE
+qDTRErxh+BWZCygS+6xJwe7lGPlwutTISwoe8YbRwfCHYWmziIitt2Mo5JSk
+fGdIgo/M2+v1wGEcn7da/x+7P9Tyv24BAA==
 
 -->
 
