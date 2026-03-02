@@ -50,7 +50,7 @@ informative:
       title: Fine-grained, privacy-augmenting LI-compliance in the LAKE standard
       author:
       - name: P. Lafourcade
-      - name: E. López Pérez
+      - name: E. López-Pérez
       - name: C. Olivier-Anclin
       - name: C. Onete
       - name: C. Papon
@@ -60,7 +60,7 @@ informative:
       target: https://ieeexplore.ieee.org/document/11247913
       title: Pre-Shared Key Authentication With EDHOC - The Security–Performance Tradeoff
       author:
-      - name: E. López Pérez
+      - name: E. López-Pérez
       - name: T. Watteyne
       - name: R. Marin-Lopez
       - name: C. Onete
