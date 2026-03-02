@@ -2043,15 +2043,6 @@ Table of Contents
    compromised), and to some extent also strengthens authentication
    (e.g., if a long-term signature secret key is compromised).
 
-   Nos approches hybrides (mélant KEM et signature pour
-   l'authentification) reprennent la structure du Key Derivation
-   Schedule de EDHOC [RFC9528].  L'utilisation d'un 'static' shared-
-   secret dans la dérivation de clé reforce la sécurité de la clé entre
-   deux parties non-compromise (par exemple si la clé de KEM éphémère
-   est compromise), et d'une certaine manière renforce aussi
-   l'authentification (en cas par exemple de compromission d'une clé
-   long-terme de signature).
-
 4.1.  Forward Secrecy
 
    The compromise of a long-term signature key sign.sk for one of the
@@ -2066,7 +2057,7 @@ Table of Contents
    [I-D.pocero-authkem-ikr-edhoc]), it follows that this is not
    sufficient to derive the session key PRK_out in isolation.  This is
    because PRK_out is derived from all shared secrets of the session,
-   including the ephemeral KEM secret ss_eph.  As a result, torecompute
+   including the ephemeral KEM secret ss_eph.  As a result, to recompute
    PRK_out, attackers would also need to compromise the ephemeral KEM
    secret ss_eph used in the session.  Thus, each of the five protocols
    achieves Forward Secrecy (FS) provided that the ephemeral KEM secret
