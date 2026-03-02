@@ -3310,14 +3310,16 @@ However, we can still keep our previous proposal in mind and try to prove this p
 <section id="section-4.4">
         <h3 id="name-downgrade-protection">
 <a href="#section-4.4" class="section-number selfRef">4.4. </a><a href="#name-downgrade-protection" class="section-name selfRef">Downgrade Protection</a>
-      </h3>
+        </h3>
+<p id="section-4.4-1">Our protocols protect against downgrade attacks in the same way as EDHOC since the choice of methods and cipher suites is included in the calculation of certain THs and is linked to Connection Identifiers of each session (and then to endpoint identities). As a result, we have the same Downgrade Protection as in EDHOC <span>[<a href="#RFC9528" class="cite xref">RFC9528</a>]</span>.<a href="#section-4.4-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="transcript-hash-binding">
 <section id="section-4.5">
         <h3 id="name-transcript-hash-binding">
 <a href="#section-4.5" class="section-number selfRef">4.5. </a><a href="#name-transcript-hash-binding" class="section-name selfRef">Transcript Hash Binding</a>
-      </h3>
+        </h3>
+<p id="section-4.5-1">In our protocols, transcript hashes are constructed as in <span>[<a href="#RFC9528" class="cite xref">RFC9528</a>]</span>. They contain elements from previous messages as well as endpoint identities. They are also involved in the computation of derived and intermediaries keys (as explained in the Key Derivation Schedules). Thus, like EDHOC, they provide protection against misbinding attacks (since identities are linked to keys and messages via THs) and inter-session replay attacks (since any changes to a message or injected message from another session invalidates subsequent THs). Consequently, at each step of the handshake, the integrity of the process is verified using THs.<a href="#section-4.5-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="external-authorization-data-ead">
