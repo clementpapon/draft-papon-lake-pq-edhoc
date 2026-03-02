@@ -1,0 +1,15 @@
+<references xmlns="https://www.rfc-editor.org/reference/bibxml/">
+  <reference anchor="CottierPointcheval23">
+    <front>
+      <title>Security Analysis of Improved EDHOC Protocol</title>
+      <author initials="B." surname="Cottier" fullname="Baptiste Cottier"/>
+      <author initials="D." surname="Pointcheval" fullname="David Pointcheval"/>
+      <date year="2023"/>
+    </front>
+    <seriesInfo name="bookTitle" value="Foundations and Practice of Security, 15th International Symposium (FPS 2022)"/>
+    <seriesInfo name="publisher" value="Springer, Cham"/>
+    <seriesInfo name="series" value="Lecture Notes in Computer Science, vol. 13877"/>
+    <seriesInfo name="pageRange" value="3-18"/>
+    <seriesInfo name="DOI" value="10.1007/978-3-031-30122-3_1"/>
+  </reference>
+</references>

@@ -37,6 +37,15 @@ normative:
 informative:
     RFC9053: RFC9053
     RFC9794: RFC9794
+    CottierPointcheval23:
+      target: https://doi.org/10.1007/978-3-031-30122-3_1
+      title: Security Analysis of Improved EDHOC Protocol
+      author:
+      - name: B. Cottier
+        org:
+      - name: D. Pointcheval
+        org: (ignored here anyway)
+      date: 2022
 
 --- abstract
 
@@ -1443,16 +1452,26 @@ So compared to {{I-D.pocero-authkem-edhoc}}, we reduce the number of mandatory m
 
 # Security Considerations
 
+Nous proposons ici une analyse de sécurité globale de nos cinq propositions (au besoin nous numérotons les protocoles de 1 à 5, selon leur ordre d'apparition dans le document)
+
+## Forward Secrecy
+At the end of the handshake, each endpoint securely acquires the session key `PRK_out` with mutual authentication. This authentication is ensured by the Responder's MAC and the Initiator's signature on its own MAC, similar to EDHOC method 1.
+
+## Identity protection
+
+Protocol 1 is relatively close to the one proposed in {{I-D.pocero-authkem-ikr-edhoc}}.
+Concerning the Identity Protection property, in the way it is constructed, protocol 1 guarantees this property against passive attackers for the Responder and active attackers for the Initiator.
+Indeed, the same attacks as in EDHOC {{RFC9528}} by an active attacker allow learning the identity of the Responder.
+Moreover, since all information about identities is encrypted from the second message onwards, this ensures Identity Protection against passive/active attackers for Responder/Initiator, provided that long-term keys are not compromised.
+However, we want to point out a disputed aspect regarding this property. We think it might be possible to reuse the security game introduced in {{CottierPointcheval23}}, reused in (LI-EDHOC) and adapted in (EDHOC-PSK) to prove Identity Protection.
+But this security game seems difficult to adapt to the protocol proposed in {{I-D.pocero-authkem-ikr-edhoc}}.
+We suggest a more global approach for this property, possibly based on (PPAKE).
+
+
 Firstly, we analyze the security of the first protocol, i.e., in the case where the Initiator knows the Responder. Then we provide a security analysis of the other four protocols which show more similarities between them.
 
 ## Security Considerations of PQ-EDHOC-IKR (I Signs - R KEM)
 
-This protocol is relatively close to the one proposed in {{I-D.pocero-authkem-ikr-edhoc}}. At the end of the handshake, each endpoint securely acquires the session key `PRK_out` with mutual authentication. This authentication is ensured by the Responder's MAC and the Initiator's signature on its own MAC, similar to EDHOC method 1.
-Regarding the property of Identity Protection, it seems that, by construction, our protocol guarantees this property against passive attackers for the Responder and active attackers for the Initiator. In fact, the same attacks as in EDHOC by an active attacker allow learning the identity of the Responder.
-However, since all information about identities is encrypted from the second message onwards, this ensures Identity Protection against passive/active attackers for Responder/Initiator.
-Morevoer, we want to point out a disputed aspect regarding this property. We think it might be possible to reuse the security game introduced by (Cottier and Poincheval), reused in (LI-EDHOC) and adapted in (EDHOC-PSK) to prove Identity Protection.
-However, this security game seems difficult to adapt to the protocol proposed in {{I-D.pocero-authkem-ikr-edhoc}}.
-We suggest a more global approach for this property, possibly based on (PPAKE).
 
 
 ## Security Considerations of PQ-EDHOC KEM and/or Sign
