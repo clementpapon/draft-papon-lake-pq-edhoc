@@ -42,10 +42,39 @@ informative:
       title: Security Analysis of Improved EDHOC Protocol
       author:
       - name: B. Cottier
-        org:
       - name: D. Pointcheval
-        org: (ignored here anyway)
       date: 2022
+    LIEDHOC:
+      target: https://hal.science/hal-05126079v1
+      title: Fine-grained, privacy-augmenting LI-compliance in the LAKE standard
+      author:
+      - name: P. Lafourcade
+      - name: E. López Pérez
+      - name: C. Olivier-Anclin
+      - name: C. Onete
+      - name: C. Papon
+      - name: M. Vučinić
+      date: 2025
+    EDHOCPSK:
+      target: https://ieeexplore.ieee.org/document/11247913
+      title: Pre-Shared Key Authentication With EDHOC - The Security–Performance Tradeoff
+      author:
+      - name: E. López Pérez
+      - name: T. Watteyne
+      - name: R. Marin-Lopez
+      - name: C. Onete
+      - name: C. Papon
+      - name: M. Vučinić
+      date: 2025
+    PPAKE:
+      target: https://eprint.iacr.org/2022/1338
+      title: Privacy-Preserving Authenticated Key Exchange - Stronger Privacy and Generic Constructions
+      author:
+      - name: S. Ramacher
+      - name: D. Slamanig
+      - name: A. Weninger
+      date: 2022
+
 
 --- abstract
 
@@ -121,7 +150,7 @@ We present here a high-level description of our PQ-EDHOC-IKR where the Initiator
   <---------------------------------------------------------+
   |                        message_2                        |
   |                                                         |
-  |           AEAD(ID_CRED_I, Signature_3, EAD_3)           |
+  |           AEAD(ID_CRED_I, SIGNATURE_3, EAD_3)           |
   +--------------------------------------------------------->
   |                        message_3                        |
   |                                                         |
@@ -400,7 +429,7 @@ We describe below the equivalent of EDHOC method 1. The Initiator will authentic
   <-------------------------------------------------------------+
   |                          message_2                          |
   |                                                             |
-  |        kem.ct_R, AEAD(ID_CRED_I, Signature_3, EAD_3)        |
+  |        kem.ct_R, AEAD(ID_CRED_I, SIGNATURE_3, EAD_3)        |
   +------------------------------------------------------------->
   |                          message_3                          |
   |                                                             |
@@ -677,7 +706,7 @@ We now invert the roles and describe below the equivalent of EDHOC method 2. The
   <-------------------------------------------------------------+
   |                          message_2                          |
   |                                                             |
-  |             AEAD(ID_CRED_I, EAD_3), Signature_3             |
+  |             AEAD(ID_CRED_I, EAD_3), SIGNATURE_3             |
   +------------------------------------------------------------->
   |                          message_3                          |
   |                                                             |
@@ -934,7 +963,7 @@ We now present the equivalent of EDHOC method 3, which is in our case, an hybrid
   <-------------------------------------------------------------+
   |                          message_2                          |
   |                                                             |
-  |        kem.ct_R, AEAD(ID_CRED_I, EAD_3), Signature_3        |
+  |        kem.ct_R, AEAD(ID_CRED_I, EAD_3), SIGNATURE_3        |
   +------------------------------------------------------------->
   |                          message_3                          |
   |                                                             |
@@ -1193,7 +1222,7 @@ We now present the second variant of the equivalent of EDHOC method 3. In this s
   <-------------------------------------------------------------+
   |                          message_2                          |
   |                                                             |
-  |        kem.ct_R, AEAD(ID_CRED_I, EAD_3), Signature_3        |
+  |        kem.ct_R, AEAD(ID_CRED_I, EAD_3), SIGNATURE_3        |
   +------------------------------------------------------------->
   |                          message_3                          |
   |                                                             |
@@ -1452,10 +1481,19 @@ So compared to {{I-D.pocero-authkem-edhoc}}, we reduce the number of mandatory m
 
 # Security Considerations
 
-Nous proposons ici une analyse de sécurité globale de nos cinq propositions (au besoin nous numérotons les protocoles de 1 à 5, selon leur ordre d'apparition dans le document)
+We propose here a global security analysis of our five proposals (if necessary, we number the protocols from 1 to 5 according to their order of appearance in the document).
+At the end of every of the five handshakes, each endpoint securely acquires the session key `PRK_out` with mutual authentication.
+For protocol 1, this authentication is ensured by the Responder's MAC and the Initiator's signature on its own MAC, similar to EDHOC method 1.
+For protocol 2, it is ensured by the Respond's signature, and the Initiator's signature on its own MAC. Protocol 3 ensured this in a reverse way, since it is a mirror version of protocol 2.
+For protocol 4, this authentication is ensured by the Responder's MAC and the Initiator's signature (not on its MAC this time). And for protocol 5, this is ensured by the signatures of the Initiator and the Responder.
+
 
 ## Forward Secrecy
-At the end of the handshake, each endpoint securely acquires the session key `PRK_out` with mutual authentication. This authentication is ensured by the Responder's MAC and the Initiator's signature on its own MAC, similar to EDHOC method 1.
+
+The compromise of a long-term signature key `sign.sk` for one of the users does not compromise the security of past sessions.
+
+If the static KEM secret key of the Initiator `kem.sk_I` or of the Responder `kem.sk_R` (depending on the use case and protocol) is compromised after the end of the session, an attacker could recalculate the shared secret `ss_I` or `ss_R`. However, since we have preserved the structure of the Key Derivation Schedule from EDHOC {{RFC9528}} (and proposals in {{I-D.pocero-authkem-edhoc}} and {{I-D.pocero-authkem-ikr-edhoc}}), it follows that this is not sufficient to derive the session key `PRK_out` in isolation. This is because `PRK_out` is derived from all shared secrets of the session, including the ephemeral KEM secret `ss_eph`. As a result, torecompute `PRK_out`, attackers would also need to compromise the ephemeral KEM secret `ss_eph` used in the session. Thus, each of the five protocols achieves Forward Secrecy (FS) provided that the ephemeral KEM secret `ss_eph` remains uncompromised.
+
 
 ## Identity protection
 
@@ -1463,24 +1501,29 @@ Protocol 1 is relatively close to the one proposed in {{I-D.pocero-authkem-ikr-e
 Concerning the Identity Protection property, in the way it is constructed, protocol 1 guarantees this property against passive attackers for the Responder and active attackers for the Initiator.
 Indeed, the same attacks as in EDHOC {{RFC9528}} by an active attacker allow learning the identity of the Responder.
 Moreover, since all information about identities is encrypted from the second message onwards, this ensures Identity Protection against passive/active attackers for Responder/Initiator, provided that long-term keys are not compromised.
-However, we want to point out a disputed aspect regarding this property. We think it might be possible to reuse the security game introduced in {{CottierPointcheval23}}, reused in (LI-EDHOC) and adapted in (EDHOC-PSK) to prove Identity Protection.
-But this security game seems difficult to adapt to the protocol proposed in {{I-D.pocero-authkem-ikr-edhoc}}.
-We suggest a more global approach for this property, possibly based on (PPAKE).
+However, we want to point out a disputed aspect regarding this property. We think it might be possible to reuse the security game introduced in {{CottierPointcheval23}}, reused in {{LIEDHOC}} and adapted in {{EDHOCPSK}} to prove Identity Protection.
+But this security game seems difficult to adapt to the protocol proposed in {{I-D.pocero-authkem-ikr-edhoc}} due to the encryption present in the first message.
+We suggest a more global approach for this property, possibly based on {{PPAKE}}.
+
+To return to a more classical definition of Identity Protection property, protocols 2 to 5 keep the same structure as EDHOC, and so inherit of this property. In other words, the identities of the Initiator and the Responder are never sent in plain text, always encrypted, and only from the second message onwards. According to the definition in {{CottierPointcheval23}}, protocols 2 to 5 verify the Identity Protection property against passive attackers for the Responder and against active attackers for the Initiator.
+However, we can still keep our previous proposal in mind and try to prove this property in a more general framework for these protocols as well.
 
 
-Firstly, we analyze the security of the first protocol, i.e., in the case where the Initiator knows the Responder. Then we provide a security analysis of the other four protocols which show more similarities between them.
+## Key Compromise Impersonation
 
-## Security Considerations of PQ-EDHOC-IKR (I Signs - R KEM)
+## Downgrade Protection
+
+## Transcript Hash Binding
+
+## External Authorization Data (EAD)
+
+The External Authorization Data (EAD) in our protocols behaves similarly to what is done in EDHOC {{RFC9528}} and {{I-D.pocero-authkem-edhoc}}. The first two messages `message_1` and `message_2` carry EAD (partially encrypted), which are not yet authenticated. This makes them potentially vulnerable to replay attacks by an active attacker. The last two messages `message_3` and `message_4` protect the EAD using either MAC or signature, as well as AEAD encryption. Thus, like in EDHOC {{RFC9528}}, our 5 protocols' EAD data must be treated as untrusted until the handshake is successfully completed.
 
 
+## Post-Compromise Security
 
-## Security Considerations of PQ-EDHOC KEM and/or Sign
 
-Compared to the protocols proposed in {{I-D.pocero-authkem-edhoc}}, where authentication is achieved via KEMs and MACs, we eliminate here, depending on the case, one or more MACs. Authentication is then replaced by one or more signatures, as in EDHOC method 0 for example.
-In all cases, the handshake ensures the obtaining of a common secret key `PRK_out` with mutual authentication.
-Our protocols, always keeping in mind our above point, guarantee by construction the property of Identity Protection.
-
-TODO : explain what kind of security the KEM & Signs approach brings in the Key Derivation Schedule + EAD + PFS.
+TODO : explain what kind of security the KEM & Signs approach brings in the Key Derivation Schedule + EAD .
 
 
 # IANA Considerations
