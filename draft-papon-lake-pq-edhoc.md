@@ -3,7 +3,8 @@ title: "Post-Quantum EDHOC - Initiator and Responder using signature and/or KEM"
 abbrev: "PQ-EDHOC - Sign and KEM"
 category: info
 
-docname: draft-papon-pq-edhoc-latest
+docname: draft-papon-lake-pq-edhoc-latest
+workgroup: LAKE
 submissiontype: IETF  # also: "independent", "editorial", "IAB", or "IRTF"
 #number:
 date: 2026-02-26
