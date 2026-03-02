@@ -2,14 +2,14 @@
 
 
 
-Network Working Group                                           C. Papon
+LAKE                                                            C. Papon
 Internet-Draft                                                  C. Onete
 Intended status: Informational   XLIM UMR CNRS 7252 - Limoges University
 Expires: 30 August 2026                                 26 February 2026
 
 
 Post-Quantum EDHOC - Initiator and Responder using signature and/or KEM
-                      draft-papon-pq-edhoc-latest
+                    draft-papon-lake-pq-edhoc-latest
 
 Abstract
 
@@ -23,13 +23,6 @@ Abstract
    KEM; (2) a 3-or-4-message quantum-resistant EDHOC proposal, which
    proposes a tradeoff between message-complexity and computational
    overhead.
-
-Discussion Venues
-
-   This note is to be removed before publishing as an RFC.
-
-   Source for this draft and an issue tracker can be found at
-   https://github.com/clementpapon/draft-papon-pq-edhoc.
 
 Status of This Memo
 
