@@ -1489,6 +1489,12 @@ For protocol 2, it is ensured by the Respond's signature, and the Initiator's si
 For protocol 4, this authentication is ensured by the Responder's MAC and the Initiator's signature (not on its MAC this time). And for protocol 5, this is ensured by the signatures of the Initiator and the Responder.
 
 
+Our hybrid approaches (combining KEM and signature for authentication) follow the structure of the Key Derivation Schedule in EDHOC {{RFC9528}}. The use of a 'static' shared-secret in key derivation strengthens the security of the key between two non-compromised parties (e.g., if the ephemeral KEM key of the session is compromised), and to some extent also strengthens authentication (e.g., if a long-term signature secret key is compromised).
+
+
+Nos approches hybrides (mélant KEM et signature pour l'authentification) reprennent la structure du Key Derivation Schedule de EDHOC {{RFC9528}}. L'utilisation d'un 'static' shared-secret dans la dérivation de clé reforce la sécurité de la clé entre deux parties non-compromise (par exemple si la clé de KEM éphémère est compromise), et d'une certaine manière renforce aussi l'authentification (en cas par exemple de compromission d'une clé long-terme de signature).
+
+
 ## Forward Secrecy
 
 The compromise of a long-term signature key `sign.sk` for one of the users does not compromise the security of past sessions.
@@ -1512,6 +1518,13 @@ However, we can still keep our previous proposal in mind and try to prove this p
 
 ## Key Compromise Impersonation
 
+
+Our protocols are based on the same constructions as {{RFC9528}} and {{I-D.pocero-authkem-edhoc}}. The way intermediate keys and session keys are derived does not differ. As a result, if a long-term secret key (signature and/or KEM) of a party is compromised, an attacker could impersonate the compromised party to establish new sessions with other endpoints for example. But this would not affect existing sessions with the compromised party.
+This remains true even in our hybrid scenarios where one of the two endpoints uses two long-term keys (a KEM one and a signature one).
+Note that in this case, compromising only one of the two long-term keys does not affect established sessions. Furthermore, if an attacker wants to establish a new session by impersonating the semi-compromised party, he would need to have compromised both long-term keys to complete the handshake, assuming he uses one of our hybrid protocols again.
+Finally, note that compromising an ephemeral KEM key only compromises the corresponding session.
+Thus, we have the same Key Compromise Impersonation security as in {{RFC9528}} and {{I-D.pocero-authkem-edhoc}}.
+
 ## Downgrade Protection
 
 Our protocols protect against downgrade attacks in the same way as EDHOC since the choice of methods and cipher suites is included in the calculation of certain THs and is linked to Connection Identifiers of each session (and then to endpoint identities). As a result, we have the same Downgrade Protection as in EDHOC {{RFC9528}}.
@@ -1524,12 +1537,6 @@ In our protocols, transcript hashes are constructed as in {{RFC9528}}. They cont
 ## External Authorization Data (EAD)
 
 The External Authorization Data (EAD) in our protocols behaves similarly to what is done in EDHOC {{RFC9528}} and {{I-D.pocero-authkem-edhoc}}. The first two messages `message_1` and `message_2` carry EAD (partially encrypted), which are not yet authenticated. This makes them potentially vulnerable to replay attacks by an active attacker. The last two messages `message_3` and `message_4` protect the EAD using either MAC or signature, as well as AEAD encryption. Thus, like in EDHOC {{RFC9528}}, our 5 protocols' EAD data must be treated as untrusted until the handshake is successfully completed.
-
-
-## Post-Compromise Security
-
-
-TODO : explain what kind of security the KEM & Signs approach brings in the Key Derivation Schedule + EAD .
 
 
 # IANA Considerations
